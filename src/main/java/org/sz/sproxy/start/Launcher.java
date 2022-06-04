@@ -34,11 +34,12 @@ import java.util.Set;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.sz.sproxy.Configuration;
 import org.sz.sproxy.impl.SocksContextConfiguration;
-import org.sz.sproxy.impl.SocksServerImpl;
+import org.sz.sproxy.impl.ServerImpl;
 import org.sz.sproxy.relay.SocksRelayConfiguration;
 import org.sz.sproxy.relay.SocksRelayContext;
 import org.sz.sproxy.tunnel.KeyManager;
 import org.sz.sproxy.tunnel.TunnelConfiguration;
+import org.sz.sproxy.tunnel.client.TunnelClientConfiguration;
 import org.sz.sproxy.tunnel.server.TunnelServerConfiguration;
 import org.sz.sproxy.tunnel.server.TunnelServerContext;
 
@@ -97,21 +98,21 @@ public class Launcher {
 	private static void doClient(String[] args) throws IOException {
 		SocksRelayConfiguration config = new SocksRelayConfiguration();
 		parseOpts(args, Map.of(
-				"-h", Configuration.SOCKS_HOST,
-				"-p", Configuration.SOCKS_PORT,
-				"-H", SocksRelayConfiguration.SERVER_HOST,
-				"-P", SocksRelayConfiguration.SERVER_PORT,
+				"-h", Configuration.SERVER_HOST,
+				"-p", Configuration.SERVER_PORT,
+				"-H", TunnelClientConfiguration.TUNNEL_SERVER_HOST,
+				"-P", TunnelClientConfiguration.TUNNEL_SERVER_PORT,
 				"-k", KeyManager.KEY_STORE), config);
-		SocksServerImpl.create(config).start();
+		ServerImpl.create(config).start();
 	}
 	
 	private static void doServer(String[] args) throws IOException {
 		TunnelServerConfiguration config = new TunnelServerConfiguration();
 		parseOpts(args, Map.of(
-				"-h", Configuration.SOCKS_HOST,
-				"-p", Configuration.SOCKS_PORT,
+				"-h", Configuration.SERVER_HOST,
+				"-p", Configuration.SERVER_PORT,
 				"-a", TunnelServerConfiguration.AUTHORIZED_KEYS_FILE), config);
-		SocksServerImpl.create(config).start();
+		ServerImpl.create(config).start();
 	}
 	
 	private static void doKeyGen(String[] args) throws IOException {
@@ -152,9 +153,9 @@ public class Launcher {
 	private static void doStandalone(String[] args) throws IOException {
 		SocksContextConfiguration config = new SocksContextConfiguration();
 		parseOpts(args, Map.of(
-				"-h", Configuration.SOCKS_HOST,
-				"-p", Configuration.SOCKS_PORT), config);
-		SocksServerImpl.create(config).start();
+				"-h", Configuration.SERVER_HOST,
+				"-p", Configuration.SERVER_PORT), config);
+		ServerImpl.create(config).start();
 	}
 	
 	

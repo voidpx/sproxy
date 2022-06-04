@@ -18,6 +18,9 @@ package org.sz.sproxy;
 import java.nio.channels.NetworkChannel;
 
 /**
+ * A {@linkplain StatefulHandler} can be in some specific states, its {@linkplain StateManager} defines these states
+ * and the transition between these states.
+ * 
  * @author Sam Zheng
  *
  */
@@ -29,4 +32,6 @@ public interface StatefulHandler<C extends NetworkChannel, H extends StatefulHan
 	void setState(State<C, H> state);
 	
 	State<C, H> moveTo(String state, Object initInfo);
+	
+	StateManager getStateManager();
 }

@@ -26,9 +26,11 @@ import org.sz.sproxy.tunnel.TunnelConfiguration;
  */
 public class TunnelClientConfiguration extends TunnelConfiguration {
 	
-	public static final String SERVER_HOST = "tunnel.server.host";
+	public static final String TUNNEL_SERVER_HOST = "tunnel.server.host";
 	
-	public static final String SERVER_PORT = "tunnel.server.port";
+	public static final String TUNNEL_SERVER_PORT = "tunnel.server.port";
+	
+	public static final int TUNNEL_SERVER_PORT_DEF = 9999;
 	
 	public TunnelClientConfiguration() {
 		super();
@@ -39,11 +41,11 @@ public class TunnelClientConfiguration extends TunnelConfiguration {
 	}
 	
 	public String getServerHost() {
-		return get(SERVER_HOST, DEF_HOST);
+		return get(TUNNEL_SERVER_HOST, DEF_HOST);
 	}
 	
 	public int getServerPort() {
-		return getInt(SERVER_PORT, DEF_PORT);
+		return getInt(TUNNEL_SERVER_PORT, TUNNEL_SERVER_PORT_DEF);
 	}
 	
 	public String getKeyStoreFile() {

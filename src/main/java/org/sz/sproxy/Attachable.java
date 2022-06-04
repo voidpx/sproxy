@@ -16,13 +16,25 @@
 package org.sz.sproxy;
 
 /**
+ * This interface represents an object that is able to have something attached(attachment) with it.
+ * 
  * @author Sam Zheng
  *
  */
 public interface Attachable {
 	
+	/**
+	 * Attaches the given <code>attachment</code> with this object.
+	 * 
+	 * @param attachment
+	 */
 	void attach(Object attachment);
 	
+	/**
+	 * Returns the attachment.
+	 * 
+	 * @return
+	 */
 	Object getAttachment();
 
 }

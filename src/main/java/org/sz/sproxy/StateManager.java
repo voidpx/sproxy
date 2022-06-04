@@ -18,11 +18,18 @@ package org.sz.sproxy;
 import java.nio.channels.NetworkChannel;
 
 /**
+ * A {@linkplain StateManager} manages the state of a {@linkplain StatefulHandler}.
+ * 
  * @author Sam Zheng
  *
  */
 public interface StateManager {
 
+	/**
+	 * Returns the name of the initial state.
+	 * 
+	 * @return
+	 */
 	String getInitState();
 
 	<C extends NetworkChannel, H extends StatefulHandler<C, H>> State<C, H> moveTo(String state, H connection,

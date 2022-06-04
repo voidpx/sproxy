@@ -16,11 +16,18 @@
 package org.sz.sproxy;
 
 /**
+ * This class provides access to the context.
+ * 
  * @author Sam Zheng
  *
  */
 public interface ContextAccess {
 	
+	/**
+	 * Returns the context.
+	 * 
+	 * @return the context
+	 */
 	Context getContext();
 
 }

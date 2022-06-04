@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-public class SocksServerImpl implements Server {
+public class ServerImpl implements Server {
 	
 	Executor executor;
 	
@@ -42,7 +42,7 @@ public class SocksServerImpl implements Server {
 	
 	Acceptor acceptor;
 	
-	SocksServerImpl(Context context, String host, int port) {
+	ServerImpl(Context context, String host, int port) {
 		this.host = host;
 		this.port = port;
 		this.context = context;
@@ -76,8 +76,8 @@ public class SocksServerImpl implements Server {
 	}
 	
 	public static Server create(ContextConfiguration config) {
-		return new SocksServerImpl(config.createContext(),
-				config.getSocksHost(), config.getSocksPort());
+		return new ServerImpl(config.createContext(),
+				config.getHost(), config.getPort());
 	}
 
 }

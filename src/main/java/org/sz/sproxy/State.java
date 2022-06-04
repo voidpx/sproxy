@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.nio.channels.NetworkChannel;
 
 /**
+ * This interface represents a specific state of a {@linkplain StatefulHandler} and defines how data
+ * is processed in this state.
+ * 
  * @author Sam Zheng
  *
  */
@@ -26,10 +29,24 @@ public interface State<C extends NetworkChannel, H extends StatefulHandler<C, H>
 	
 	String getName();
 	
+	/**
+	 * Initializes this state when this state is entered.
+	 * 
+	 * @param handler
+	 * @param info
+	 * @return
+	 * @throws IOException
+	 */
 	default State<C, H> init(H handler, Object info) throws IOException {
 		return this;
 	}
 	
+	/**
+	 * Processes the connection.
+	 * 
+	 * @param handler
+	 * @throws IOException
+	 */
 	void process(H handler) throws IOException;
 	
 }

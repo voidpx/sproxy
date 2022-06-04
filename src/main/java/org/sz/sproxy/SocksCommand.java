@@ -18,6 +18,8 @@ package org.sz.sproxy;
 import java.util.function.Consumer;
 
 /**
+ * This interface represents a SOCKS5 command, e.g. CONNECT.
+ * 
  * @author Sam Zheng
  *
  */

@@ -21,13 +21,28 @@ import java.nio.channels.SocketChannel;
 import java.util.function.BiConsumer;
 
 /**
+ * This interface represents a SOCKS5 connection.
+ * 
  * @author Sam Zheng
  *
  */
 public interface SocksConnection extends StatefulHandler<SocketChannel, SocksConnection>, Attachable {
 	
+	/**
+	 * Returns the remote end of this connection.
+	 * 
+	 * @return
+	 */
 	ChannelHandler<SocketChannel> getRemote();
 	
+	/**
+	 * Connects to the destination on behalf of the client.
+	 * 
+	 * @param address
+	 * @param connected
+	 * @param ctx
+	 * @throws IOException
+	 */
 	void connectRemote(InetSocketAddress address, BiConsumer<ChannelHandler<SocketChannel>, Writable> connected,
 			Object ctx) throws IOException;
 	

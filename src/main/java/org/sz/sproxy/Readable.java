@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
+ * Interface that could be read from.
+ * 
  * @author Sam Zheng
  *
  */

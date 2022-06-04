@@ -18,6 +18,8 @@ package org.sz.sproxy;
 import java.net.InetAddress;
 
 /**
+ * Interface for objects that are aware of {@linkplain InetAddress}s that should be blacklisted.
+ * 
  * @author Sam Zheng
  *
  */

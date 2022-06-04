@@ -16,6 +16,8 @@
 package org.sz.sproxy;
 
 /**
+ * Connection listener that gets notified of connection events.
+ * 
  * @author Sam Zheng
  *
  */

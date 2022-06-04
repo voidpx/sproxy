@@ -16,6 +16,8 @@
 package org.sz.sproxy;
 
 /**
+ * This interface handles the auth for SOCKS5, currently no auth is implemented.
+ * 
  * @author Sam Zheng
  *
  */

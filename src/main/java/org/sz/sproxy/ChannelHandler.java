@@ -18,13 +18,23 @@ package org.sz.sproxy;
 import java.nio.channels.NetworkChannel;
 
 /**
+ * A channel handler is responsible for handling events for a network channel, e.g. read/write/connect.
+ * 
  * @author Sam Zheng
  *
  */
 public interface ChannelHandler<T extends NetworkChannel> extends ContextAccess {
 	
+	/**
+	 * Returns the channel of this handler.
+	 * 
+	 * @return see above
+	 */
 	T getChannel();
 	
+	/**
+	 * Close this handler and its underlying channel.
+	 */
 	void close();
 
 }

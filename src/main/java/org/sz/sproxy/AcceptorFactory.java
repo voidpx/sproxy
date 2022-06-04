@@ -16,11 +16,19 @@
 package org.sz.sproxy;
 
 /**
+ * This interface is responsible for creating {@linkplain Acceptor}s for a {@linkplain Server}.
+ * 
  * @author Sam Zheng
  *
  */
 public interface AcceptorFactory {
 	
+	/**
+	 * Creates an acceptor for the given server.
+	 * 
+	 * @param server the server
+	 * @return see above
+	 */
 	Acceptor createAcceptor(Server server);
 
 }

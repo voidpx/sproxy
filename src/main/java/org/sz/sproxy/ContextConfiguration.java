@@ -16,6 +16,8 @@
 package org.sz.sproxy;
 
 /**
+ * Configuration that's able to create a context.
+ * 
  * @author Sam Zheng
  *
  */

@@ -16,6 +16,8 @@
 package org.sz.sproxy;
 
 /**
+ * This interface provides centralized configuration.
+ * 
  * @author Sam Zheng
  *
  */
@@ -23,13 +25,11 @@ public interface Configuration {
 	
 	String DEF_HOST = "localhost";
 	
-	int DEF_PORT = 1080;
+	int DEF_PORT = 8888;
 	
-	String SOCKS_HOST = "socks.host";
+	String SERVER_HOST = "server.host";
 	
-	String SOCKS_PORT = "socks.port";
-	
-	String SOCKS_MODE = "socks.mode";
+	String SERVER_PORT = "server.port";
 	
 	String get(String key, String def);
 	
@@ -45,12 +45,22 @@ public interface Configuration {
 		return Integer.parseInt(v);
 	}
 	
-	default String getSocksHost() {
-		return get(SOCKS_HOST, DEF_HOST);
+	/**
+	 * Returns the host on which the server will be listening.
+	 * 
+	 * @return
+	 */
+	default String getHost() {
+		return get(SERVER_HOST, DEF_HOST);
 	}
 	
-	default int getSocksPort() {
-		return getInt(SOCKS_PORT, DEF_PORT);
+	/**
+	 * Returns the port at which the server will be listening.
+	 * 
+	 * @return
+	 */
+	default int getPort() {
+		return getInt(SERVER_PORT, DEF_PORT);
 	}
 	
 	String set(String key, String value);

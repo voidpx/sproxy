@@ -23,6 +23,8 @@ import java.util.concurrent.Executor;
 import org.sz.sproxy.ChannelHandler;
 
 /**
+ * Base interface for {@linkplain ChannelHandler}s that's implemented using non-blocking io.
+ * 
  * @author Sam Zheng
  *
  * @param <T>

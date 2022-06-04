@@ -19,11 +19,19 @@ import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;
 
 /**
+ * An acceptor accepts incoming connections and creates corresponding {@linkplain ChannelHandler}s for them,
+ * typically by using {@linkplain ChannelHandlerFactory}.
+ * 
  * @author Sam Zheng
  *
  */
 public interface Acceptor extends ChannelHandler<ServerSocketChannel> {
 	
+	/**
+	 * Starts accepting incoming connections.
+	 * 
+	 * @throws IOException on IO error
+	 */
 	void startAccepting() throws IOException;
 
 }

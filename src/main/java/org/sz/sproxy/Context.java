@@ -21,11 +21,16 @@ import java.util.List;
 import java.util.concurrent.Executor;
 
 /**
+ * This interface represents the context.
+ * 
  * @author Sam Zheng
  *
  */
 public interface Context {
 	
+	/**
+	 * Only supports SOCKS5.
+	 */
 	byte SOCKS_VERSION = 0x5;
 	
 	Server getServer();

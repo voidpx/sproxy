@@ -18,6 +18,8 @@ package org.sz.sproxy;
 import java.io.IOException;
 
 /**
+ * This interface represents a server which, once started, could serve client requests.
+ * 
  * @author Sam Zheng
  *
  */
@@ -29,6 +31,11 @@ public interface Server {
 	
 	int getPort();
 	
+	/**
+	 * Starts this server.
+	 * 
+	 * @throws IOException
+	 */
 	void start() throws IOException;
 	
 	void stop();

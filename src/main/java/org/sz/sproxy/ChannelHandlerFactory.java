@@ -18,6 +18,8 @@ package org.sz.sproxy;
 import java.nio.channels.SocketChannel;
 
 /**
+ * This interface is responsible for creating {@linkplain SocketChannel} handlers.
+ * 
  * @author Sam Zheng
  *
  */
