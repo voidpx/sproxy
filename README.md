@@ -67,4 +67,11 @@ to start the tunnel server.
 4. change the system proxy settings to point to the proxy host/port used in step 3. execute
 
 `curl --preproxy socks5://<tunnel client listening host>:<port> <http url to fetch>`
-    
+
+### libs used
+
+* [Bouncy Castle](https://www.bouncycastle.org/)
+* [Slf4j](https://www.slf4j.org/)
+* [JUnit 5](https://junit.org/junit5/)
+* [Spring Boot Maven Plugin](https://docs.spring.io/spring-boot/docs/3.0.x/maven-plugin/reference/htmlsingle/)
+* [Lombok](https://projectlombok.org/)

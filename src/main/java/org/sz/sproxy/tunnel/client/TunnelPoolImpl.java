@@ -182,7 +182,7 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 
 	@Override
 	public synchronized TunnelClient getTunnel() {
-		while (connections.isEmpty()) {
+		for (int i = 0; i < 10 && connections.isEmpty(); i++) {
 			if (pendingConnections.isEmpty()) {
 				newTunnel(callback);
 			}
@@ -192,6 +192,9 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 				Thread.currentThread().interrupt();
 				throw new SocksException("Interrupted while waiting for tunnel to be ready");
 			}
+		}
+		if (connections.isEmpty()) {
+			throw new SocksException("Unable to connect to tunnel server");
 		}
 		TunnelClient c = connections.peek();
 		if (c.getRelayedCount() > RELAY_THRESHOLD && (connections.size() + pendingConnections.size()) < size) {
