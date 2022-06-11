@@ -33,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TunnelPoolImpl implements TunnelPool, Runnable {
 
-	private static final long TUN_IDLE_TIME = 5 * 60 * 1000L; // max idle time
+	private static final int TUN_IDLE_TIME = 60 * 1000; // max idle time
 
 	@SuppressWarnings("unused")
 	private static final long TUN_RENEW_TIME = /* 20 * */30 * 1000L;
@@ -59,6 +59,8 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 	int size;
 
 	Context context;
+	
+	TunnelClientConfiguration config;
 
 	public TunnelPoolImpl(Context context) {
 		this(context, MAX_CONN);
@@ -67,6 +69,7 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 	public TunnelPoolImpl(Context context, int size) {
 		this.size = size;
 		this.context = context;
+		config = (TunnelClientConfiguration) context.getConfiguration();
 		connections = new PriorityQueue<>(size, (o1, o2) -> o1.getRelayedCount() - o2.getRelayedCount());
 		pendingConnections = new HashSet<>();
 		Thread t = new Thread(this);
@@ -81,7 +84,7 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 		log.debug("active connections: {}", connections.size());
 
 		List<TunnelClient> toClose = connections.stream()
-				.filter(c -> t - ((TunnelInfo) c.getAttachment()).idle > TUN_IDLE_TIME).toList();
+				.filter(c -> t - ((TunnelInfo) c.getAttachment()).idle > config.getPoolIdleTime(TUN_IDLE_TIME)).toList();
 		
 		log.debug("closing idle connections: {}", toClose.size());
 		toClose.forEach(c -> {

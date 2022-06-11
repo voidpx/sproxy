@@ -30,6 +30,8 @@ public class TunnelClientConfiguration extends TunnelConfiguration {
 	
 	public static final String TUNNEL_SERVER_PORT = "tunnel.server.port";
 	
+	public static final String TUNNEL_POOL_IDLE_TIME = "tunnel.client.pool.idle.time";
+	
 	public static final int TUNNEL_SERVER_PORT_DEF = 9999;
 	
 	public TunnelClientConfiguration() {
@@ -60,6 +62,10 @@ public class TunnelClientConfiguration extends TunnelConfiguration {
 	@Override
 	public String getDefaultAuthorizedKeyFile() {
 		return "./tc_authorized_keys";
+	}
+	
+	public int getPoolIdleTime(int def) {
+		return getInt(TUNNEL_POOL_IDLE_TIME, def);
 	}
 	
 }
