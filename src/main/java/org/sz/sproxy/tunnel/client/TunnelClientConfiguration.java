@@ -30,7 +30,9 @@ public class TunnelClientConfiguration extends TunnelConfiguration {
 	
 	public static final String TUNNEL_SERVER_PORT = "tunnel.server.port";
 	
-	public static final String TUNNEL_POOL_IDLE_TIME = "tunnel.client.pool.idle.time";
+	public static final String TUNNEL_POOL_IDLE_TIME = "tunnel.client.pool.connections.idleTime";
+	
+	public static final String TUNNEL_POOL_MAX = "tunnel.client.pool.connections.max";
 	
 	public static final int TUNNEL_SERVER_PORT_DEF = 9999;
 	
@@ -66,6 +68,10 @@ public class TunnelClientConfiguration extends TunnelConfiguration {
 	
 	public int getPoolIdleTime(int def) {
 		return getInt(TUNNEL_POOL_IDLE_TIME, def);
+	}
+	
+	public int getMaxConnections(int def) {
+		return getInt(TUNNEL_POOL_MAX, def);
 	}
 	
 }

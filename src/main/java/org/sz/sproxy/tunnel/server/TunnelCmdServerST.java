@@ -30,6 +30,7 @@ import org.sz.sproxy.tunnel.TunnelPacketReader;
 /**
  * @author Sam Zheng
  *
+ * @deprecated unstable, subject to change or removal
  */
 public class TunnelCmdServerST implements TunnelCmd {
 

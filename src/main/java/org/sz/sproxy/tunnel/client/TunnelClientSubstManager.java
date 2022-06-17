@@ -19,7 +19,8 @@ import org.sz.sproxy.impl.AbstractStateManager;
 
 /**
  * @author Sam Zheng
- *
+ * 
+ * @deprecated unstable, subject to change or removal
  */
 public class TunnelClientSubstManager extends AbstractStateManager {
 	

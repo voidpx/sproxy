@@ -59,11 +59,11 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 	int size;
 
 	Context context;
-	
+
 	TunnelClientConfiguration config;
 
 	public TunnelPoolImpl(Context context) {
-		this(context, MAX_CONN);
+		this(context, ((TunnelClientConfiguration) context.getConfiguration()).getMaxConnections(MAX_CONN));
 	}
 
 	public TunnelPoolImpl(Context context, int size) {
@@ -80,19 +80,20 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 
 	private void houseKeeping() {
 		long t = System.currentTimeMillis();
-		
+
 		log.debug("active connections: {}", connections.size());
 
 		List<TunnelClient> toClose = connections.stream()
-				.filter(c -> t - ((TunnelInfo) c.getAttachment()).idle > config.getPoolIdleTime(TUN_IDLE_TIME)).toList();
-		
+				.filter(c -> t - ((TunnelInfo) c.getAttachment()).idle > config.getPoolIdleTime(TUN_IDLE_TIME))
+				.toList();
+
 		log.debug("closing idle connections: {}", toClose.size());
 		toClose.forEach(c -> {
 			// close tunnel that's idle for too long
 			log.debug("closing idle tunnel");
 			c.close();
 		});
-		
+
 		// TODO: tunnel renewing is not stable yet!
 //		List<TunnelClient> toRenew = connections.stream()
 //				.filter(c -> ((TunnelInfo) c.getAttachment()).idle == Long.MAX_VALUE

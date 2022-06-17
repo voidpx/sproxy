@@ -35,6 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * @author Sam Zheng
  *
+ * @deprecated unstable, subject to change or removal
  */
 @Slf4j
 public class TunnelClientSubstState extends TunnelCmdState<SocketChannel, TunnelClientSubst> implements TunnelCmd {

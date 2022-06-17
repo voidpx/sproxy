@@ -18,13 +18,28 @@ package org.sz.sproxy.tunnel;
 import java.util.function.Consumer;
 
 /**
+ * A tunnel command.
+ * 
  * @author Sam Zheng
  *
  */
 public interface TunnelCmd {
 	
+	/**
+	 * Return true if this is a channel command, i.e. associated with a channel.
+	 * 
+	 * @return
+	 */
 	boolean isChannelCmd();
 	
+	/**
+	 * Executes this command.
+	 * 
+	 * @param tunnel
+	 * @param reader
+	 * @param onFinish
+	 * @param ctx
+	 */
 	void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx);
 
 }

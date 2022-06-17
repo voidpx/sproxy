@@ -30,7 +30,8 @@ import org.sz.sproxy.tunnel.TunneledConnection;
 
 /**
  * @author Sam Zheng
- *
+ * 
+ * @deprecated unstable, subject to change or removal
  */
 public class TunnelClientSubst extends NioConnection<SocketChannel, TunnelClientSubst> implements Tunnel {
 	TunnelClientConnection origin;
