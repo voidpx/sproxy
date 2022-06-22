@@ -13,24 +13,35 @@
  * See the License for the specific language governing permissions and     
  * limitations under the License.                                          
  */
-package org.sz.sproxy.tunnel.client;
+package org.sz.sproxy.tunnel.server;
 
-import org.sz.sproxy.impl.AbstractStateManager;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.function.Consumer;
+
+import org.sz.sproxy.SocksException;
+import org.sz.sproxy.tunnel.Tunnel;
+import org.sz.sproxy.tunnel.TunnelCmd;
+import org.sz.sproxy.tunnel.TunnelPacketReader;
 
 /**
  * @author Sam Zheng
- * 
- * @deprecated unstable, subject to change or removal
+ *
  */
-public class TunnelClientSubstManager extends AbstractStateManager {
-	
-	public TunnelClientSubstManager() {
-		addState("ST", TunnelClientSubstState::new);
+public class TunnelCmdLPReq implements TunnelCmd {
+
+	@Override
+	public boolean isChannelCmd() {
+		return false;
 	}
 
 	@Override
-	public String getInitState() {
-		return "ST";
+	public void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
+		try {
+			tunnel.getWriter(Tunnel.LPRP, tunnel).write(ByteBuffer.wrap(new byte[0]));
+		} catch (IOException e) {
+			throw new SocksException(e);
+		}
 	}
 
 }

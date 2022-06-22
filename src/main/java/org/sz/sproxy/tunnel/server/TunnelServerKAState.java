@@ -47,7 +47,6 @@ public class TunnelServerKAState extends TunnelCmdState<SocketChannel, TunnelSer
 	public TunnelServerKAState() {
 		super(NAME);
 		addHandler(Byte.valueOf(Tunnel.KARQ), this);
-		addHandler(Byte.valueOf(Tunnel.STRQ), new TunnelCmdServerST());
 	}
 	
 	@Override

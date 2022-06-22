@@ -40,7 +40,7 @@ public class TunnelServerConnectedState extends TunnelCmdState<SocketChannel, Tu
 		addHandler(Byte.valueOf(Tunnel.CONNECTRQ), new TunnelCmdConnect());
 		addHandler(Byte.valueOf(Tunnel.DATA), new TunnelCmdData());
 		addHandler(Byte.valueOf(Tunnel.CLOSE), new TunnelCmdClose());
-		addHandler(Byte.valueOf(Tunnel.STM), new TunnelCmdServerSTM());
+		addHandler(Byte.valueOf(Tunnel.LPRQ), new TunnelCmdLPReq());
 	}
 
 	@Override

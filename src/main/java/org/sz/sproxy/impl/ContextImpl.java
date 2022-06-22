@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import org.sz.sproxy.AcceptorFactory;
 import org.sz.sproxy.BlackListAware;
@@ -72,9 +73,14 @@ public class ContextImpl implements Context, ConnectionListener, BlackListAware 
 	protected Map<String, Object> objects = new HashMap<>();
 	
 	public ContextImpl(AcceptorFactory acceptorFactory,
-			Executor executor, Configuration config) {
+			Configuration config) {
 		this.acceptorFactory = acceptorFactory;
-		this.taskExecutor = executor;
+		this.taskExecutor = Executors.newFixedThreadPool(config.getTaskWorkers(), r -> {
+			Thread t = new Thread(r);
+			t.setDaemon(true);
+			t.setName("task_executor");
+			return t;
+		});
 		configuration = config;
 		commandFactory = createCommandFactory();
 		channelHandlerFactory = createConnectionFactory();

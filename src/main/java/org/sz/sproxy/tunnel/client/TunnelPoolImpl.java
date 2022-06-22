@@ -16,10 +16,13 @@
 package org.sz.sproxy.tunnel.client;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.sz.sproxy.Context;
 import org.sz.sproxy.SocksException;
@@ -61,6 +64,8 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 	Context context;
 
 	TunnelClientConfiguration config;
+	
+	AtomicInteger livenessProbeId = new AtomicInteger(new Random().nextInt());
 
 	public TunnelPoolImpl(Context context) {
 		this(context, ((TunnelClientConfiguration) context.getConfiguration()).getMaxConnections(MAX_CONN));
@@ -73,9 +78,26 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 		connections = new PriorityQueue<>(size, (o1, o2) -> o1.getRelayedCount() - o2.getRelayedCount());
 		pendingConnections = new HashSet<>();
 		Thread t = new Thread(this);
-		t.setName("tunnel_pool");
+		t.setName("tunnel_pool_house_keeping");
 		t.setDaemon(true);
 		t.start();
+		
+		Thread livenessTick = new Thread(() -> {
+			while (true) {
+				synchronized (this) {
+					new ArrayList<>(connections).forEach(c -> c.livenessTick());
+				}
+				try {
+					Thread.sleep(config.getLivenessResponse() * 1000 + 500); // half a second skew
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					log.debug(e.getMessage(), e);
+				}
+			}
+		});
+		livenessTick.setName("tunnel_liveness_tick");
+		livenessTick.setDaemon(true);
+		livenessTick.start();
 	}
 
 	private void houseKeeping() {
@@ -93,19 +115,7 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 			log.debug("closing idle tunnel");
 			c.close();
 		});
-
-		// TODO: tunnel renewing is not stable yet!
-//		List<TunnelClient> toRenew = connections.stream()
-//				.filter(c -> ((TunnelInfo) c.getAttachment()).idle == Long.MAX_VALUE
-//				&& t - ((TunnelInfo) c.getAttachment()).connected > TUN_RENEW_TIME)
-//				.toList();
-//		toRenew.forEach(c -> {
-//			try {
-//				((TunnelClientConnection) c).renew();
-//			} catch (IOException e) {
-//				log.debug("Error renewing tunnel", e);
-//			}
-//		});
+		
 	}
 
 	TunnelClientCallback callback = new TunnelClientCallback() {
@@ -139,10 +149,6 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 			i.idle = Long.MAX_VALUE;
 		}
 
-		@Override
-		public void renewing(TunnelClient tunnel) {
-			TunnelPoolImpl.this.renewing(tunnel);
-		}
 	};
 
 	@Override
@@ -152,18 +158,12 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 				houseKeeping();
 			}
 			try {
-				Thread.sleep(10000);
+				Thread.sleep(5000);
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 				log.debug(e.getMessage(), e);
 			}
 		}
-	}
-
-	private synchronized void renewing(TunnelClient t) {
-		connections.remove(t);
-		pendingConnections.add(t);
-		notifyAll();
 	}
 
 	private synchronized void add(TunnelClient t) {

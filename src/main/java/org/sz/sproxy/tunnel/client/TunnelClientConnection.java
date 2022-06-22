@@ -23,7 +23,6 @@ import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
@@ -33,7 +32,6 @@ import java.util.function.BiConsumer;
 import org.sz.sproxy.Attachable;
 import org.sz.sproxy.ChannelHandler;
 import org.sz.sproxy.Context;
-import org.sz.sproxy.SocksException;
 import org.sz.sproxy.StateManager;
 import org.sz.sproxy.Writable;
 import org.sz.sproxy.impl.NioConnection;
@@ -56,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelClientConnection>
 		implements TunnelClient, Tunnel, Attachable {
 	
-	volatile boolean st = false;
+	volatile long livenessSent;
 
 	SecuredConnectionHelper helper;
 
@@ -70,8 +68,6 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 	TunnelClientCallback callback;
 
 	Object attachment;
-	
-	TunnelClientSubst subst;
 	
 	@Getter
 	@Setter
@@ -88,7 +84,6 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 		addr = new InetSocketAddress(config.getServerHost(), config.getServerPort());
 		channel.connect(addr);
 		selector.wakeup();
-
 	}
 	
 	@Override
@@ -122,58 +117,7 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 		return connection;
 	}
 	
-	void renew() throws IOException {
-		if (!getState().getName().equals(TunnelClientConnectedState.NAME)) {
-			throw new SocksException("Invalid state");
-		}
-		callback.renewing(this);
-		TunnelClientSubst st = new TunnelClientSubst(getContext(), addr, (t) -> {
-			sendSTM(t);
-		}, this);
-		log.debug("creating substitution tunnel client {}", st);
-	}
-	
-	synchronized void switchTunnel() {
-		Objects.requireNonNull(subst, "subst is null");
-		SelectionKey oldKey = key;
-		SocketChannel oldChannel = channel;
-		channel = subst.getChannel();
-		key = subst.getKey();
-		key.attach(this);
-		helper.setChannel(channel::read);
-		
-		oldKey.attach(null);
-		try {
-			oldChannel.close();
-		} catch (IOException e) {
-			log.debug("Error closing old tunnel channel", e);
-		}
-		st = false;
-		callback.connected(this);
-		subst.switchDone();
-		subst = null;
-		notifyAll();
-	}
-	
-	private synchronized void sendSTM(TunnelClientSubst s) {
-		subst = s;
-		try {
-			getWriter(Tunnel.STM, this::write).write(ByteBuffer.wrap(new byte[0]));
-			st = true;
-		} catch (IOException e) {
-			throw new SocksException(e);
-		}
-	}
-	
 	private synchronized void internalWrite(ByteBuffer buffer) throws IOException {
-		while (st) {
-			try {
-				wait(500);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				log.debug("Interrupted while waiting for tunnel switching", e);
-			}
-		}
 		super.write(buffer);
 	}
 
@@ -267,5 +211,30 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 	@Override
 	public Executor getExecutor() {
 		return ((TunnelContext)getContext()).getHighPrioExecutor();
+	}
+	
+	
+	void livenessProbeReplyReceived() {
+		log.debug("got liveness tick reply");
+		livenessSent = 0;
+	}
+	
+	@Override
+	public void livenessTick() {
+		if (livenessSent == 0) {
+			log.debug("liveness tick");
+			try {
+				getWriter(Tunnel.LPRQ, this::write).write(ByteBuffer.wrap(new byte[0]));
+			} catch (IOException e) {
+				log.debug("Error sending liveness probe", e);
+				close();
+			}
+			livenessSent = System.currentTimeMillis();
+		} else {
+			// previous liveness probe didn't get response, probably connection is jamed or dead,
+			// close this connection, client(browser) should(automatically) retry
+			log.debug("liveness tick didn't get a response, close");
+			close();
+		}
 	}
 }

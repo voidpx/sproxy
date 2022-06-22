@@ -13,16 +13,10 @@
  * See the License for the specific language governing permissions and     
  * limitations under the License.                                          
  */
-package org.sz.sproxy.tunnel.server;
+package org.sz.sproxy.tunnel.client;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Objects;
 import java.util.function.Consumer;
 
-import org.sz.sproxy.SocksException;
-import org.sz.sproxy.impl.Utils;
-import org.sz.sproxy.tunnel.Crypto;
 import org.sz.sproxy.tunnel.Tunnel;
 import org.sz.sproxy.tunnel.TunnelCmd;
 import org.sz.sproxy.tunnel.TunnelPacketReader;
@@ -30,44 +24,18 @@ import org.sz.sproxy.tunnel.TunnelPacketReader;
 /**
  * @author Sam Zheng
  *
- * @deprecated unstable, subject to change or removal
  */
-public class TunnelCmdServerST implements TunnelCmd {
+public class TunnelCmdLPReply implements TunnelCmd {
 
 	@Override
 	public boolean isChannelCmd() {
 		return false;
 	}
-	
 
 	@Override
 	public void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
-		ByteBuffer buf = reader.getPayload();
-		int id = buf.getInt();
-		TunnelServerContext context = (TunnelServerContext)tunnel.getContext();
-		TunnelServerConnection old = context.getConnection(id);
-		Objects.requireNonNull(old.helper, "helper is null");
-		Crypto crypto = old.helper.getCrypto();
-		int ivl = buf.getInt();
-		Utils.sanitizePacketSize(ivl);
-		byte[] iv = new byte[ivl];
-		buf.get(iv);
-		int idbel = buf.getInt();
-		Utils.sanitizePacketSize(idbel);
-		byte[] idbe = new byte[idbel];
-		buf.get(idbe);
-		byte[] decoded = crypto.decrypt(idbe, iv);
-		int ide = ByteBuffer.wrap(decoded).getInt();
-		if (ide != id) {
-			throw new SocksException("ST: invalid id " + id + " != " + ide);
-		}
-		TunnelServerConnection newTunnel = (TunnelServerConnection)tunnel;
-		old.setNewTunnel(newTunnel);
-		try {
-			tunnel.getWriter(Tunnel.STRP, tunnel).write(ByteBuffer.wrap(new byte[] {0}));
-		} catch (IOException e) {
-			throw new SocksException(e);
-		}
+		TunnelClientConnection conn = (TunnelClientConnection)tunnel;
+		conn.livenessProbeReplyReceived();
 	}
 
 }

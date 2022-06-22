@@ -152,7 +152,7 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 	@Override
 	public void close() {
 		if (!closing.getAndSet(true)) { // initiate closing
-			context.getTaskExecutor().execute(closeThis());
+			this.getExecutor().execute(closeThis());
 		}
 
 	}

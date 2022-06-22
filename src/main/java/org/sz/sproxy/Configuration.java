@@ -23,7 +23,13 @@ package org.sz.sproxy;
  */
 public interface Configuration {
 	
+	String BUF_SIZE_KEY = "packet.buffer.size";
+	
+	String TASK_WORKERS_KEY = "task.workers";
+	
 	String DEF_HOST = "localhost";
+	
+	int DEF_BUF_SIZE = 0x400;
 	
 	int DEF_PORT = 8888;
 	
@@ -54,6 +60,10 @@ public interface Configuration {
 		return get(SERVER_HOST, DEF_HOST);
 	}
 	
+	default int getTaskWorkers() {
+		return getInt(TASK_WORKERS_KEY, Runtime.getRuntime().availableProcessors());
+	}
+	
 	/**
 	 * Returns the port at which the server will be listening.
 	 * 
@@ -61,6 +71,10 @@ public interface Configuration {
 	 */
 	default int getPort() {
 		return getInt(SERVER_PORT, DEF_PORT);
+	}
+	
+	default int getPacketBufferSize() {
+		return getInt(BUF_SIZE_KEY, DEF_BUF_SIZE);
 	}
 	
 	String set(String key, String value);

@@ -15,8 +15,6 @@
  */
 package org.sz.sproxy.relay;
 
-import java.util.concurrent.Executors;
-
 import org.sz.sproxy.Context;
 import org.sz.sproxy.ContextConfiguration;
 import org.sz.sproxy.impl.AcceptorFactoryImpl;
@@ -30,12 +28,6 @@ public class SocksRelayConfiguration extends TunnelClientConfiguration implement
 
 	@Override
 	public Context createContext() {
-		return new SocksRelayContext(new AcceptorFactoryImpl(),
-				Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), r -> {
-					Thread t = new Thread(r);
-					t.setDaemon(true);
-					t.setName("task_executor");
-					return t;
-				}), this);
+		return new SocksRelayContext(new AcceptorFactoryImpl(), this);
 	}
 }

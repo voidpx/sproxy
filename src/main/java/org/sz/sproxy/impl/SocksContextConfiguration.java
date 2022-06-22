@@ -16,7 +16,6 @@
 package org.sz.sproxy.impl;
 
 import java.io.IOException;
-import java.util.concurrent.Executors;
 
 import org.sz.sproxy.Context;
 import org.sz.sproxy.ContextConfiguration;
@@ -37,13 +36,7 @@ public class SocksContextConfiguration extends PropertiesConfiguration implement
 	
 	@Override
 	public Context createContext() {
-		return new ContextImpl(new AcceptorFactoryImpl(),
-				Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), r -> {
-					Thread t = new Thread(r);
-					t.setDaemon(true);
-					t.setName("task_executor");
-					return t;
-				}), this);
+		return new ContextImpl(new AcceptorFactoryImpl(), this);
 	}
 
 }

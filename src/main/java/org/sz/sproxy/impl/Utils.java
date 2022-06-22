@@ -62,7 +62,8 @@ public final class Utils {
 	};
 	
 	public static void pump(Context context, Readable source, Writable to, Runnable onClose) throws IOException {
-		ByteBuffer b = ByteBuffer.allocate(PAGE_SIZE);
+		int bufSize = context.getConfiguration().getPacketBufferSize();
+		ByteBuffer b = ByteBuffer.allocate(bufSize);
 		while (true) {
 			int n = source.read(b);
 			if (n == -1) {
@@ -80,7 +81,7 @@ public final class Utils {
 					b.clear();
 				} else {
 					// previous buffer was not completely written, use a new buffer
-					b = ByteBuffer.allocate(PAGE_SIZE);
+					b = ByteBuffer.allocate(bufSize);
 				}
 			} else {
 				break;

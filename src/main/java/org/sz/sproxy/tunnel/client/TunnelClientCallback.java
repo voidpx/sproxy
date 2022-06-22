@@ -28,7 +28,5 @@ public interface TunnelClientCallback {
 	void channelClosed(TunnelClient tunnel, RelayedConnection tunneled);
 
 	void closing(TunnelClient tunnel);
-	
-	void renewing(TunnelClient tunnel);
 
 }

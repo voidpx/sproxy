@@ -17,7 +17,6 @@ package org.sz.sproxy.tunnel;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import org.sz.sproxy.ContextAccess;
@@ -54,11 +53,16 @@ public interface Tunnel extends ContextAccess, Writable, Readable, Identifiable 
 	byte AUTHRQ = 0x3;
 	byte AUTHRP = 0x4;
 	
+	// === experimental, unstable/useable ===
 	// switch tunnel
 	byte STRQ = 0x5;
 	byte STRP = 0x6;
-	
 	byte STM = 0x7;
+	// === experimental, unstable, end ===
+	
+	// liveness probe
+	byte LPRQ = 0x8;
+	byte LPRP = 0x9;
 	
 	// channel commands
 	byte CONNECTRQ = 0x11;
@@ -141,7 +145,7 @@ public interface Tunnel extends ContextAccess, Writable, Readable, Identifiable 
 		try {
 			call.run();
 		} catch (Throwable e) {
-			Optional.ofNullable(onError).ifPresent(o -> o.accept(e));
+			onError.accept(e);
 		}
 	}
 }

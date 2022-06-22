@@ -59,8 +59,8 @@ public class SocksRelayContext extends ContextImpl implements TunnelContext {
 	@Getter
 	Executor highPrioExecutor;
 	
-	public SocksRelayContext(AcceptorFactory acceptorFactory, Executor executor, TunnelClientConfiguration config) {
-		super(acceptorFactory, executor, config);
+	public SocksRelayContext(AcceptorFactory acceptorFactory, TunnelClientConfiguration config) {
+		super(acceptorFactory, config);
 		keyManager = new KeyManagerImpl(config);
 		authManager = new AuthManagerImpl(keyManager);
 		secretManager = new SecretManagerImpl();

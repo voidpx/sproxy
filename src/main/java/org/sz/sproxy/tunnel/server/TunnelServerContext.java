@@ -57,15 +57,15 @@ public class TunnelServerContext extends ContextImpl implements TunnelContext {
 	
 	Map<Integer, TunnelServerConnection> connections = new HashMap<>();
 
-	public TunnelServerContext(AcceptorFactory acceptorFactory, Executor executor, TunnelServerConfiguration config) {
-		super(acceptorFactory, executor, config);
+	public TunnelServerContext(AcceptorFactory acceptorFactory, TunnelServerConfiguration config) {
+		super(acceptorFactory, config);
 		keyManager = new KeyManagerImpl(config);
 		authManager = new AuthManagerImpl(keyManager);
 		secretManager = new SecretManagerImpl();
 		lowPrioExecutor = Executors.newFixedThreadPool(config.getLowPrioExecutors(), (r) -> {
 			Thread t = new Thread(r);
 			t.setDaemon(true);
-			t.setName("tunnel_server_low_prio_executor");
+			t.setName("tunnel_server_low");
 			return t;
 		});
 		ThreadGroup hi = new ThreadGroup("tunnel_high");

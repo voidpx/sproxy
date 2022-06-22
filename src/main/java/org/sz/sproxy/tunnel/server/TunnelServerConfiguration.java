@@ -16,7 +16,6 @@
 package org.sz.sproxy.tunnel.server;
 
 import java.io.IOException;
-import java.util.concurrent.Executors;
 
 import org.sz.sproxy.Context;
 import org.sz.sproxy.ContextConfiguration;
@@ -39,13 +38,7 @@ public class TunnelServerConfiguration extends TunnelConfiguration implements Co
 
 	@Override
 	public Context createContext() {
-		return new TunnelServerContext(new AcceptorFactoryImpl(),
-				Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors(), r -> {
-					Thread t = new Thread(r);
-					t.setName("task_executor");
-					t.setDaemon(true);
-					return t;
-				}), this);
+		return new TunnelServerContext(new AcceptorFactoryImpl(), this);
 	}
 	
 	@Override
