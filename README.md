@@ -50,23 +50,31 @@ to get the help text:
 
 1. execute
 
-`java -jar sproxy-1.0.0.jar genKey`
-
+```bash
+java -jar sproxy-1.0.0.jar genKey
+```
 to generate related key files.
 
 2. copy `ts.p12` and `ts_authorized_keys` and the built jar file to the server where the tunnel server is to be running. execute
 
-`java -jar sproxy-1.0.0.jar server -h <listening host> -p <port>`
-    
+```bash
+java -jar sproxy-1.0.0.jar server -h <listening host> -p <port>
+```
 to start the tunnel server.
 
 3. copy `tc.p12` and `tc_authorized_keys` and the built jar file to a location where the tunnel client is to be running, typically it's the machine where you use the browser. execute
 
-`java -jar sproxy-1.0.0.jar client -h <tunnel client listening host> -p <port> -H <tunnel server host> -P <tunnel server port>`
-    
+```
+java -jar sproxy-1.0.0.jar client -h <tunnel client listening host> -p <port> -H <tunnel server host> -P <tunnel server port>
+```
+to start the tunnel client.
+
 4. change the system proxy settings to point to the proxy host/port used in step 3. execute
 
-`curl --preproxy socks5://<tunnel client listening host>:<port> <http url to fetch>`
+```bash
+curl --preproxy socks5://<tunnel client listening host>:<port> <http url to fetch>
+```
+to test if it works.
 
 ### libs used
 
