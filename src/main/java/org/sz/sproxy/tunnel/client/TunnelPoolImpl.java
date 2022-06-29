@@ -191,7 +191,7 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 				newTunnel(callback);
 			}
 			try {
-				wait();
+				wait(5000);
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
 				throw new SocksException("Interrupted while waiting for tunnel to be ready");
