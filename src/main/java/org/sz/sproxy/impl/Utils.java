@@ -81,6 +81,7 @@ public final class Utils {
 					b.clear();
 				} else {
 					// previous buffer was not completely written, use a new buffer
+					// note: to should have put b in a list to be flushed to the wire in this case
 					b = ByteBuffer.allocate(bufSize);
 				}
 			} else {

@@ -36,6 +36,11 @@ public interface TunnelClient extends Tunnel, ChannelHandler<SocketChannel> , At
 	
 	void pump(RelayedConnection conn) throws IOException;
 	
+	
+	/**
+	 * not needed.
+	 */
+	@Deprecated(since = "1.0.1")
 	void livenessTick();
 
 }

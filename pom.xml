@@ -8,7 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.sz</groupId>
     <artifactId>sproxy</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <name>${project.artifactId}</name>
 
     <dependencyManagement>

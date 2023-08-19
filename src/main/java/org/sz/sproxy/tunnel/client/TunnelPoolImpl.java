@@ -16,7 +16,6 @@
 package org.sz.sproxy.tunnel.client;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
@@ -82,22 +81,23 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 		t.setDaemon(true);
 		t.start();
 		
-		Thread livenessTick = new Thread(() -> {
-			while (true) {
-				synchronized (this) {
-					new ArrayList<>(connections).forEach(c -> c.livenessTick());
-				}
-				try {
-					Thread.sleep(config.getLivenessResponse() * 1000 + 500); // half a second skew
-				} catch (InterruptedException e) {
-					Thread.currentThread().interrupt();
-					log.debug(e.getMessage(), e);
-				}
-			}
-		});
-		livenessTick.setName("tunnel_liveness_tick");
-		livenessTick.setDaemon(true);
-		livenessTick.start();
+//		// don't do liveness tick, it sometimes reports false positive
+//		Thread livenessTick = new Thread(() -> {
+//			while (true) {
+//				synchronized (this) {
+//					new ArrayList<>(connections).forEach(c -> c.livenessTick());
+//				}
+//				try {
+//					Thread.sleep(config.getLivenessResponse() * 1000 + 500); // half a second skew
+//				} catch (InterruptedException e) {
+//					Thread.currentThread().interrupt();
+//					log.debug(e.getMessage(), e);
+//				}
+//			}
+//		});
+//		livenessTick.setName("tunnel_liveness_tick");
+//		livenessTick.setDaemon(true);
+//		livenessTick.start();
 	}
 
 	private void houseKeeping() {
