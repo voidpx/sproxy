@@ -74,15 +74,33 @@ public class Launcher {
 		}
 	}
 	
-	private static void parseOpts(String[] args, Map<String, String> opts, Configuration config, Set<String> required) {
+	static class Opt {
+		String confKey;
+		boolean needsArg;
+		Opt(String ck) {
+			this(ck, true);
+		}
+		Opt(String ck, boolean needsArg) {
+			this.confKey = ck;
+			this.needsArg = needsArg;
+		}
+	}
+	
+	private static void parseOpts(String[] args, Map<String, Opt> opts, Configuration config, Set<String> required) {
 		required = new HashSet<String>(required);
 		for (int i = 0; i < args.length; i++) {
 			String s = args[i];
 			if (opts.containsKey(s)) {
-				String v = getRequiredArg(args, i, s);
-				String p = opts.get(s);
+				Opt o = opts.get(s);
+				String v;
+				if (o.needsArg) {
+					v = getRequiredArg(args, i, s);
+					i++;
+				} else {
+					v = "true"; // opt present
+				}
+				String p = opts.get(s).confKey;
 				config.set(p, v);
-				i++;
 			}
 			required.remove(s);
 		}
@@ -91,27 +109,28 @@ public class Launcher {
 		}
 	}
 	
-	private static void parseOpts(String[] args, Map<String, String> opts, Configuration config) {
+	private static void parseOpts(String[] args, Map<String, Opt> opts, Configuration config) {
 		parseOpts(args, opts, config, Collections.emptySet());
 	}
 	
 	private static void doClient(String[] args) throws IOException {
 		SocksRelayConfiguration config = new SocksRelayConfiguration();
 		parseOpts(args, Map.of(
-				"-h", Configuration.SERVER_HOST,
-				"-p", Configuration.SERVER_PORT,
-				"-H", TunnelClientConfiguration.TUNNEL_SERVER_HOST,
-				"-P", TunnelClientConfiguration.TUNNEL_SERVER_PORT,
-				"-k", KeyManager.KEY_STORE), config);
+				"-h", new Opt(Configuration.SERVER_HOST),
+				"-p", new Opt(Configuration.SERVER_PORT),
+				"-H", new Opt(TunnelClientConfiguration.TUNNEL_SERVER_HOST),
+				"-P", new Opt(TunnelClientConfiguration.TUNNEL_SERVER_PORT),
+				"-k", new Opt(KeyManager.KEY_STORE)), config);
 		ServerImpl.create(config).start();
 	}
 	
 	private static void doServer(String[] args) throws IOException {
 		TunnelServerConfiguration config = new TunnelServerConfiguration();
 		parseOpts(args, Map.of(
-				"-h", Configuration.SERVER_HOST,
-				"-p", Configuration.SERVER_PORT,
-				"-a", TunnelServerConfiguration.AUTHORIZED_KEYS_FILE), config);
+				"-h", new Opt(Configuration.SERVER_HOST),
+				"-p", new Opt(Configuration.SERVER_PORT),
+				"-6", new Opt(Configuration.SERVER_IPV6, false),
+				"-a", new Opt(TunnelServerConfiguration.AUTHORIZED_KEYS_FILE)), config);
 		ServerImpl.create(config).start();
 	}
 	
@@ -137,8 +156,8 @@ public class Launcher {
 	private static void doAddAuthKey(String[] args) throws IOException {
 		TunnelServerConfiguration config = new TunnelServerConfiguration();
 		parseOpts(args, Map.of(
-				"-k", KeyManager.KEY_STORE,
-				"-a", TunnelConfiguration.AUTHORIZED_KEYS_FILE), config, new HashSet<>(Arrays.asList("-k", "-a")));
+				"-k", new Opt(KeyManager.KEY_STORE),
+				"-a", new Opt(TunnelConfiguration.AUTHORIZED_KEYS_FILE)), config, new HashSet<>(Arrays.asList("-k", "-a")));
 		TunnelServerContext ctx = (TunnelServerContext)config.createContext();
 		Entry<PrivateKey, Certificate[]> entry = ctx.getKeyManager().load(config.getKeyStoreEntry(), null);
 		String k = ctx.getKeyManager().toString(entry.getValue()[0].getPublicKey());
@@ -153,8 +172,8 @@ public class Launcher {
 	private static void doStandalone(String[] args) throws IOException {
 		SocksContextConfiguration config = new SocksContextConfiguration();
 		parseOpts(args, Map.of(
-				"-h", Configuration.SERVER_HOST,
-				"-p", Configuration.SERVER_PORT), config);
+				"-h", new Opt(Configuration.SERVER_HOST),
+				"-p", new Opt(Configuration.SERVER_PORT)), config);
 		ServerImpl.create(config).start();
 	}
 	

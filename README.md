@@ -31,7 +31,8 @@ to get the help text:
         -k <keystore file> - keystore file(pkcs12) that contains the key to be used by the tunnel client to authenticate with the tunnel server                          
       server - run as a tunnel server                                                                                                                                    
         -h <host> - address at which the tunnel server will be listening                                                                                                 
-        -p <port> - port on which the tunnel server will be listening                                                                                                    
+        -p <port> - port on which the tunnel server will be listening
+        -6 if present, listen on ipv6 address                                                                                                    
         -a <authorized key file> - file that contains the public keys that are authorized to connect to this tunnel server                                               
       genKey - generate a key pair(RSA) for tunnel client and server respectively for mutual authentication, generated files are:                                        
         tc.p12 - tunnel client key store                                                                                                                                 

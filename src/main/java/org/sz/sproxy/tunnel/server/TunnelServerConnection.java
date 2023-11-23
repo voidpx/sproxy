@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -59,6 +60,8 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 
 	Map<Integer, TunneledConnection> remotes;
 	
+	private volatile long lastActive;
+	
 	@Getter
 	private int id;
 	
@@ -67,6 +70,7 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 		helper = new SecuredConnectionHelper(channel::read, context);
 		remotes = new ConcurrentHashMap<>();
 		id = ID.getAndIncrement();
+		lastActive = System.currentTimeMillis();
 		context.getConnectionListeners().forEach(l -> l.connectionEstablished(this));
 		moveTo(getStateManager().getInitState(), null);
 	}
@@ -82,13 +86,16 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 
 	@Override
 	public int read(ByteBuffer buffer) throws IOException {
+		lastActive = System.currentTimeMillis();
 		return helper.read(buffer);
 	}
 	
+	@Deprecated
 	void setNewTunnel(TunnelServerConnection newTunnel) {
 		this.newTunnel = newTunnel;
 	}
 	
+	@Deprecated
 	synchronized void switchTunnel() {
 		try {
 			getWriter(Tunnel.STM, this::write).write(ByteBuffer.wrap(new byte[0]));
@@ -128,6 +135,7 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 	
 	@Override
 	public synchronized void write(ByteBuffer buffer) throws IOException {
+		lastActive = System.currentTimeMillis();
 		if (buffer.remaining() == 0) {
 			return;
 		}
@@ -190,5 +198,14 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 	@Override
 	public Executor getExecutor() {
 		return ((TunnelContext)getContext()).getHighPrioExecutor();
+	}
+	
+	boolean isAlive() {
+		long t = System.currentTimeMillis();
+		int i = getContext().getConfiguration().getInt("max_idle_time", 5 * 60 * 1000); // 10 idle
+		log.debug("checking liveness, last active: {}, now: {}", new Date(lastActive), new Date(t));
+		boolean r = t - lastActive <= i;
+		log.debug("still active: {}", r);
+		return r;
 	}
 }

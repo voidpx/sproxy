@@ -15,10 +15,11 @@
  */
 package org.sz.sproxy.tunnel.server;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.function.Predicate;
 
 import org.sz.sproxy.AcceptorFactory;
 import org.sz.sproxy.ChannelHandler;
@@ -33,11 +34,13 @@ import org.sz.sproxy.tunnel.auth.KeyManagerImpl;
 import org.sz.sproxy.tunnel.secure.SecretManagerImpl;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Sam Zheng
  *
  */
+@Slf4j
 public class TunnelServerContext extends ContextImpl implements TunnelContext {
 	
 	@Getter
@@ -55,7 +58,7 @@ public class TunnelServerContext extends ContextImpl implements TunnelContext {
 	@Getter
 	Executor highPrioExecutor;
 	
-	Map<Integer, TunnelServerConnection> connections = new HashMap<>();
+	Map<Integer, TunnelServerConnection> connections = new ConcurrentHashMap<>();
 
 	public TunnelServerContext(AcceptorFactory acceptorFactory, TunnelServerConfiguration config) {
 		super(acceptorFactory, config);
@@ -76,6 +79,22 @@ public class TunnelServerContext extends ContextImpl implements TunnelContext {
 			t.setPriority(hi.getMaxPriority());
 			return t;
 		});
+		Thread watcher = new Thread(() -> {
+			while (true) {
+				try {
+					connections.values().stream().filter(Predicate.not(TunnelServerConnection::isAlive)).forEach(c -> {
+						c.close();
+					});
+					Thread.sleep(10000);
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					log.debug("tunnel server watcher interrupted", e);
+				}
+			}
+		});
+		watcher.setDaemon(true);
+		watcher.setName("tunnel_conn_watcher");
+		watcher.start();
 	}
 	
 	@Override

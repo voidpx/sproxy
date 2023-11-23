@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.sz.sproxy.Acceptor;
 import org.sz.sproxy.BlackListAware;
 import org.sz.sproxy.ChannelHandler;
+import org.sz.sproxy.Configuration;
 import org.sz.sproxy.Context;
 import org.sz.sproxy.Server;
 
@@ -72,7 +73,10 @@ public class AcceptorImpl implements Acceptor, NioChannelHandler<ServerSocketCha
 
 	@Override
 	public void startAccepting() throws IOException {
-		channel = ServerSocketChannel.open(StandardProtocolFamily.INET);
+		StandardProtocolFamily f = "true".equals(context.getConfiguration().get(Configuration.SERVER_IPV6))
+				? StandardProtocolFamily.INET6
+				: StandardProtocolFamily.INET;
+		channel = ServerSocketChannel.open(f);
 		channel.configureBlocking(false);
 
 		channel.bind(new InetSocketAddress(server.getHost(), server.getPort()));

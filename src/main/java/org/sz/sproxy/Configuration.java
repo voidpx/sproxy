@@ -37,6 +37,8 @@ public interface Configuration {
 	
 	String SERVER_PORT = "server.port";
 	
+	String SERVER_IPV6 = "server.ipv6";
+	
 	String get(String key, String def);
 	
 	default String get(String key) {
