@@ -58,10 +58,10 @@ public class TestProxy {
 		cp = getAvailablePort();
 		Launcher.main(new String[] {"genKey"});
 		new Thread(() -> {
-			Launcher.main(new String[] {"server", "-6", "-h", "240e:46c:8600:1b9b:f762:6089:3469:4c64", "-p", String.valueOf(sp)});
+			Launcher.main(new String[] {"server", "-6", "-h", "::1", "-p", String.valueOf(sp)});
 		}).start();
 		new Thread(() -> {
-			Launcher.main(new String[] {"client", "-h", "localhost", "-p", String.valueOf(cp), "-H", "240e:46c:8600:1b9b:f762:6089:3469:4c64", "-P", String.valueOf(sp)});
+			Launcher.main(new String[] {"client", "-h", "localhost", "-p", String.valueOf(cp), "-H", "::1", "-P", String.valueOf(sp)});
 		}).start();
 		
 		Thread.sleep(2000); // wait a bit while servers are starting.
