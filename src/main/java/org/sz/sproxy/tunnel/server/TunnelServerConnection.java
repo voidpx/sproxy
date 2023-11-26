@@ -62,6 +62,8 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 	
 	private volatile long lastActive;
 	
+	private int maxIdle;
+	
 	@Getter
 	private int id;
 	
@@ -71,6 +73,7 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 		remotes = new ConcurrentHashMap<>();
 		id = ID.getAndIncrement();
 		lastActive = System.currentTimeMillis();
+		maxIdle = getContext().getConfiguration().getInt("max_idle_time", 5 * 60 * 1000); // 5 min idle
 		context.getConnectionListeners().forEach(l -> l.connectionEstablished(this));
 		moveTo(getStateManager().getInitState(), null);
 	}
@@ -202,9 +205,8 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 	
 	boolean isAlive() {
 		long t = System.currentTimeMillis();
-		int i = getContext().getConfiguration().getInt("max_idle_time", 5 * 60 * 1000); // 10 idle
 		log.debug("checking liveness, last active: {}, now: {}", new Date(lastActive), new Date(t));
-		boolean r = t - lastActive <= i;
+		boolean r = t - lastActive <= maxIdle;
 		log.debug("still active: {}", r);
 		return r;
 	}
