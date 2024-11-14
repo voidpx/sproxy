@@ -28,6 +28,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.sz.sproxy.SocksException;
 import org.sz.sproxy.State;
+import org.sz.sproxy.Writable.WR;
 import org.sz.sproxy.tunnel.Crypto;
 import org.sz.sproxy.tunnel.SecretManager;
 import org.sz.sproxy.tunnel.Tunnel;
@@ -64,7 +65,7 @@ public class TunnelClientKAState extends TunnelCmdState<SocketChannel, TunnelCli
 	}
 
 	@Override
-	public void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
+	public WR execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
 		ByteBuffer packet = reader.getPayload();
 		byte[] key = new byte[packet.remaining()];
 		packet.get(key);
@@ -86,6 +87,7 @@ public class TunnelClientKAState extends TunnelCmdState<SocketChannel, TunnelCli
 		log.debug("shared key established");
 
 		conn.moveTo(TunnelClientAuthState.NAME, new byte[][] {key, sigData});
+		return WR.DONE;
 	}
 
 	@Override

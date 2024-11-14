@@ -27,6 +27,7 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.sz.sproxy.SocksException;
+import org.sz.sproxy.Writable.WR;
 import org.sz.sproxy.tunnel.Crypto;
 import org.sz.sproxy.tunnel.SecretManager;
 import org.sz.sproxy.tunnel.Tunnel;
@@ -55,7 +56,7 @@ public class TunnelServerKAState extends TunnelCmdState<SocketChannel, TunnelSer
 	}
 
 	@Override
-	public void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
+	public WR execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
 		try {
 			ByteBuffer packet = reader.getPayload();
 			byte[] ka = new byte[packet.remaining()];
@@ -81,7 +82,7 @@ public class TunnelServerKAState extends TunnelCmdState<SocketChannel, TunnelSer
 		} catch (IOException | InvalidKeyException | IllegalStateException e) {
 			throw new SocksException(e);
 		}
-
+		return WR.DONE;
 	}
 
 }

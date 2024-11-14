@@ -18,6 +18,8 @@ package org.sz.sproxy.tunnel;
 import java.io.IOException;
 import java.util.function.Consumer;
 
+import org.sz.sproxy.Writable.WR;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -33,23 +35,24 @@ public class TunnelCmdData implements TunnelCmd {
 	}
 	
 	@Override
-	public void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
+	public WR execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
 		int channelId = reader.getChannelId();
 		TunneledConnection tunneled = tunnel.getTunneledConnection(channelId);
 		try {
 			if (tunneled == null) { // probably closed on our side
-				log.debug("data received for a non-existent connection {}, probably closed already", channelId);
+				log.trace("data received for a non-existent connection {}, probably closed already", channelId);
 				TunnelContext context = (TunnelContext)tunnel.getContext();
-				context.getLowPrioExecutor().execute(() -> {
+				context.getTaskExecutor().execute(() -> {
 					tunnel.closeChannel(channelId);
 				});
-				return;
+			} else {
+				return tunneled.write(reader.getPayload());
 			}
-			tunneled.write(reader.getPayload());
 		} catch (IOException e1) {
 			log.debug("error forwarding packet");
 			tunneled.close();
 		}
+		return WR.DONE;
 		
 	}
 

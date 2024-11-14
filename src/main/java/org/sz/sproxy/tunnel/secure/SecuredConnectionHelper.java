@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import org.sz.sproxy.Context;
 import org.sz.sproxy.Readable;
 import org.sz.sproxy.Writable;
+import org.sz.sproxy.Writable.WR;
 import org.sz.sproxy.impl.PacketReader;
 import org.sz.sproxy.tunnel.Crypto;
 import org.sz.sproxy.tunnel.SecretManager;
@@ -83,10 +84,9 @@ public class SecuredConnectionHelper implements Readable {
 		return 0;
 	}
 	
-	public void write(ByteBuffer buffer, Writable sink) throws IOException {
+	public WR write(ByteBuffer buffer, Writable sink) throws IOException {
 		if (crypto == null) {
-			sink.write(buffer);
-			return;
+			return sink.write(buffer);
 		}
 		byte[] buf = new byte[buffer.remaining()];
 		buffer.get(buf);
@@ -102,6 +102,6 @@ public class SecuredConnectionHelper implements Readable {
 	    bf.putInt(buf.length);
 	    bf.put(buf);
 	    bf.flip();
-		sink.write(bf);
+		return sink.write(bf);
 	}
 }

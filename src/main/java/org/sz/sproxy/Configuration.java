@@ -62,6 +62,10 @@ public interface Configuration {
 		return get(SERVER_HOST, DEF_HOST);
 	}
 	
+	/**
+	 * @deprecated not used anymore
+	 * @return
+	 */
 	default int getTaskWorkers() {
 		return getInt(TASK_WORKERS_KEY, Runtime.getRuntime().availableProcessors());
 	}

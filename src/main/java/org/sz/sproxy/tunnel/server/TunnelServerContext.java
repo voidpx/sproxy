@@ -17,8 +17,6 @@ package org.sz.sproxy.tunnel.server;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 
 import org.sz.sproxy.AcceptorFactory;
@@ -52,12 +50,6 @@ public class TunnelServerContext extends ContextImpl implements TunnelContext {
 	@Getter
 	SecretManager secretManager;
 	
-	@Getter
-	Executor lowPrioExecutor;
-	
-	@Getter
-	Executor highPrioExecutor;
-	
 	Map<Integer, TunnelServerConnection> connections = new ConcurrentHashMap<>();
 
 	public TunnelServerContext(AcceptorFactory acceptorFactory, TunnelServerConfiguration config) {
@@ -65,20 +57,6 @@ public class TunnelServerContext extends ContextImpl implements TunnelContext {
 		keyManager = new KeyManagerImpl(config);
 		authManager = new AuthManagerImpl(keyManager);
 		secretManager = new SecretManagerImpl();
-		lowPrioExecutor = Executors.newFixedThreadPool(config.getLowPrioExecutors(), (r) -> {
-			Thread t = new Thread(r);
-			t.setDaemon(true);
-			t.setName("tunnel_server_low");
-			return t;
-		});
-		ThreadGroup hi = new ThreadGroup("tunnel_high");
-		highPrioExecutor = Executors.newFixedThreadPool(config.getHighPrioExecutors(), r -> {
-			Thread t = new Thread(hi, r);
-			t.setDaemon(true);
-			t.setName("tunnel_high_prio_executor");
-			t.setPriority(hi.getMaxPriority());
-			return t;
-		});
 		Thread watcher = new Thread(() -> {
 			while (true) {
 				try {

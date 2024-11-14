@@ -55,7 +55,6 @@ public class ContextImpl implements Context, ConnectionListener, BlackListAware 
 	@Getter
 	protected ChannelHandlerFactory channelHandlerFactory;
 	
-	@Getter
 	protected Executor taskExecutor;
 	
 	protected Selector selector;
@@ -75,15 +74,22 @@ public class ContextImpl implements Context, ConnectionListener, BlackListAware 
 	public ContextImpl(AcceptorFactory acceptorFactory,
 			Configuration config) {
 		this.acceptorFactory = acceptorFactory;
-		this.taskExecutor = Executors.newFixedThreadPool(config.getTaskWorkers(), r -> {
-			Thread t = new Thread(r);
-			t.setDaemon(true);
-			t.setName("task_executor");
-			return t;
-		});
 		configuration = config;
 		commandFactory = createCommandFactory();
 		channelHandlerFactory = createConnectionFactory();
+	}
+	
+	@Override
+	public Executor getTaskExecutor() {
+		if (taskExecutor == null) {
+			taskExecutor = Executors.newCachedThreadPool(r -> {
+				Thread t = new Thread(r);
+				t.setDaemon(true);
+				t.setName("task_executor");
+				return t;
+			});	
+		}
+		return taskExecutor;
 	}
 	
 	protected SocksCommandFactory createCommandFactory() {

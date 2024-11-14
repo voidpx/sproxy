@@ -24,6 +24,7 @@ import java.util.Map;
 import org.sz.sproxy.SocksException;
 import org.sz.sproxy.State;
 import org.sz.sproxy.StatefulHandler;
+import org.sz.sproxy.Writable.WR;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -67,7 +68,12 @@ public abstract class TunnelCmdState<C extends ByteChannel & NetworkChannel, T e
 		while (true) {
 			if (reader.read(handler)) {
 				try {
-					processPacket(handler, reader);
+					if (processPacket(handler, reader) == WR.AGAIN) {
+						if (log.isDebugEnabled()) {
+							log.debug("unable to write once, try at next poll");
+						}
+						break;
+					}
 				} finally {
 					reader.reset();
 				}
@@ -77,19 +83,18 @@ public abstract class TunnelCmdState<C extends ByteChannel & NetworkChannel, T e
 		}
 	}
 
-	protected void processPacket(T handler, TunnelPacketReader reader) {
+	protected WR processPacket(T handler, TunnelPacketReader reader) {
 		Tunnel t = (Tunnel) handler;
 		TunneledConnection tunneled = t.getTunneledConnection(reader.getChannelId());
 		try {
-			getHandler(reader.getCmd()).execute(t, reader, (o) -> {
+			return getHandler(reader.getCmd()).execute(t, reader, (o) -> {
 			}, reader.getChannelId());
 		} catch (Throwable e) {
 			log.debug("Error handling tunnel command " + reader.getCmd(), e);
-			if (tunneled == null) {
-				return;
-			} else {
+			if (tunneled != null) {
 				tunneled.close();
 			}
+			return WR.DONE;
 		}
 
 	}

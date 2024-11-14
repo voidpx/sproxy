@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.function.Consumer;
 
 import org.sz.sproxy.SocksException;
+import org.sz.sproxy.Writable.WR;
 import org.sz.sproxy.relay.SocksRelayContext;
 import org.sz.sproxy.tunnel.AuthManager;
 import org.sz.sproxy.tunnel.Tunnel;
@@ -57,7 +58,7 @@ public class TunnelClientAuthState extends TunnelCmdState<SocketChannel, TunnelC
 	}
 
 	@Override
-	public void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
+	public WR execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
 		ByteBuffer buf = reader.getPayload();
 		byte code = buf.get();
 		if (code != AUTH_SUCCESS) {
@@ -83,6 +84,7 @@ public class TunnelClientAuthState extends TunnelCmdState<SocketChannel, TunnelC
 		conn.moveTo(TunnelClientConnectedState.NAME, null);
 		// notify connection establishment
 		conn.connected();
+		return WR.DONE;
 	}
 	
 	boolean requireServerAuth(TunnelClientConfiguration config) {

@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
 import org.sz.sproxy.SocksException;
+import org.sz.sproxy.Writable.WR;
 import org.sz.sproxy.tunnel.Tunnel;
 import org.sz.sproxy.tunnel.TunnelCmd;
 import org.sz.sproxy.tunnel.TunnelPacketReader;
@@ -28,6 +29,7 @@ import org.sz.sproxy.tunnel.TunnelPacketReader;
  * @author Sam Zheng
  *
  */
+@Deprecated
 public class TunnelCmdLPReq implements TunnelCmd {
 
 	@Override
@@ -36,12 +38,13 @@ public class TunnelCmdLPReq implements TunnelCmd {
 	}
 
 	@Override
-	public void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
+	public WR execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
 		try {
 			tunnel.getWriter(Tunnel.LPRP, tunnel).write(ByteBuffer.wrap(new byte[0]));
 		} catch (IOException e) {
 			throw new SocksException(e);
 		}
+		return WR.DONE;
 	}
 
 }

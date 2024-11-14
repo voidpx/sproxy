@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import org.sz.sproxy.ChannelHandler;
 import org.sz.sproxy.SocksException;
 import org.sz.sproxy.Writable;
+import org.sz.sproxy.Writable.WR;
 import org.sz.sproxy.impl.SocksConnectCommand;
 import org.sz.sproxy.tunnel.Tunnel;
 import org.sz.sproxy.tunnel.TunnelCmd;
@@ -43,7 +44,7 @@ public class TunnelCmdConnect implements TunnelCmd {
 	}
 
 	@Override
-	public void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
+	public WR execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
 		int channelId = reader.getChannelId();
 		TunneledConnection tunneled = tunnel.getTunneledConnection(channelId);
 		try {
@@ -53,7 +54,7 @@ public class TunnelCmdConnect implements TunnelCmd {
 		} catch (IOException e) {
 			tunneled.close();
 		}
-
+		return WR.DONE;
 	}
 
 	private BiConsumer<ChannelHandler<SocketChannel>, Writable> getConnectedCallback(Tunnel connection,

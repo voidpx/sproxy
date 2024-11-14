@@ -15,9 +15,6 @@
  */
 package org.sz.sproxy.relay;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 import org.sz.sproxy.AcceptorFactory;
 import org.sz.sproxy.ChannelHandlerFactory;
 import org.sz.sproxy.SocksCommandFactory;
@@ -53,32 +50,11 @@ public class SocksRelayContext extends ContextImpl implements TunnelContext {
 	@Getter
 	SecretManager secretManager;
 	
-	@Getter
-	Executor lowPrioExecutor;
-	
-	@Getter
-	Executor highPrioExecutor;
-	
 	public SocksRelayContext(AcceptorFactory acceptorFactory, TunnelClientConfiguration config) {
 		super(acceptorFactory, config);
 		keyManager = new KeyManagerImpl(config);
 		authManager = new AuthManagerImpl(keyManager);
 		secretManager = new SecretManagerImpl();
-		lowPrioExecutor = Executors.newFixedThreadPool(config.getLowPrioExecutors(), r -> {
-			Thread t = new Thread(r);
-			t.setDaemon(true);
-			t.setName("tunnel_low");
-			t.setPriority(Thread.MIN_PRIORITY);
-			return t;
-		});
-		ThreadGroup hi = new ThreadGroup("tunnel_high");
-		highPrioExecutor = Executors.newFixedThreadPool(config.getHighPrioExecutors(), r -> {
-			Thread t = new Thread(hi, r);
-			t.setDaemon(true);
-			t.setName("tunnel_high");
-			t.setPriority(hi.getMaxPriority());
-			return t;
-		});
 		pool = new TunnelPoolImpl(this);
 	}
 	

@@ -17,6 +17,7 @@ package org.sz.sproxy.tunnel.client;
 
 import java.util.function.Consumer;
 
+import org.sz.sproxy.Writable.WR;
 import org.sz.sproxy.tunnel.Tunnel;
 import org.sz.sproxy.tunnel.TunnelCmd;
 import org.sz.sproxy.tunnel.TunnelPacketReader;
@@ -25,6 +26,7 @@ import org.sz.sproxy.tunnel.TunnelPacketReader;
  * @author Sam Zheng
  *
  */
+@Deprecated
 public class TunnelCmdLPReply implements TunnelCmd {
 
 	@Override
@@ -33,9 +35,10 @@ public class TunnelCmdLPReply implements TunnelCmd {
 	}
 
 	@Override
-	public void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
+	public WR execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
 		TunnelClientConnection conn = (TunnelClientConnection)tunnel;
 		conn.livenessProbeReplyReceived();
+		return WR.DONE;
 	}
 
 }

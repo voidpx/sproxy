@@ -16,6 +16,8 @@
 package org.sz.sproxy.impl;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.NetworkChannel;
@@ -29,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.sz.sproxy.Context;
+import org.sz.sproxy.Flushable;
 import org.sz.sproxy.Readable;
 import org.sz.sproxy.State;
 import org.sz.sproxy.StateManager;
@@ -45,7 +48,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public abstract class NioConnection<C extends SelectableChannel & ByteChannel & NetworkChannel, H extends StatefulHandler<C, H>>
-		implements NioChannelHandler<C>, StatefulHandler<C, H>, Readable, Writable {
+		implements NioChannelHandler<C>, StatefulHandler<C, H>, Readable, Writable, Flushable {
 
 	ConcurrentHashMap<Thread, Thread> workers = new ConcurrentHashMap<>();
 
@@ -102,28 +105,40 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 	}
 
 	@Override
-	public synchronized void write(ByteBuffer buffer) throws IOException {
+	public synchronized WR write(ByteBuffer buffer) throws IOException {
 		outBuffers.add(buffer);
-		flushOutput();
+		return flushOutput();
 	}
 
-	protected synchronized void flushOutput() throws IOException {
+	protected synchronized WR flushOutput() throws IOException {
+		WR ret = WR.DONE;
 		while (!outBuffers.isEmpty()) {
 			ByteBuffer b = outBuffers.peek();
 			int r = b.remaining();
 			if (r > 0) {
 				int n = channel.write(b);
 				if (n < r) {
+					if (log.isDebugEnabled()) {
+						StringWriter sw = new StringWriter();
+						PrintWriter pw = new PrintWriter(sw);
+						new Throwable().printStackTrace(pw);
+						log.debug("NOT fully written: out: {}, remaining: {}, trace:\n{}", n, r - n, sw.toString());
+					}
+					ret = WR.AGAIN;
 					break;
 				}
 				outBuffers.remove(); // fully written
 			} else {
+				if (log.isDebugEnabled()) {
+					log.debug("b.remaining <= 0, BUG!");
+				}
 				outBuffers.remove(); // bug
 			}
 		}
-		if (!outBuffers.isEmpty()) {
+		if (ret == WR.AGAIN) {
 			setWriteInterest();
 		}
+		return ret;
 	}
 
 	private Runnable closeThis() {
@@ -212,6 +227,19 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 	}
 
 	protected void handleInternal(int ops) throws IOException {
+		if ((ops & SelectionKey.OP_WRITE) > 0) {
+			if (!outBuffers.isEmpty() && log.isDebugEnabled()) {
+				log.debug("flush remaining from last time");
+			}
+			flushOutput(); // there was remaining, try flush first
+			if (outBuffers.isEmpty()) {
+				if (log.isDebugEnabled()) {
+					log.debug("flushed remaining from last time");
+				} else {
+					log.debug("still jam...");
+				}
+			}
+		}
 		if ((ops & SelectionKey.OP_CONNECT) > 0) {
 			try {
 				handleConnect();
@@ -238,4 +266,8 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 		state.process((H) this);
 	}
 
+	@Override
+	public WR flush() throws IOException {
+		return flushOutput();
+	}
 }

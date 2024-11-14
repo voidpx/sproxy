@@ -22,6 +22,7 @@ import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import org.sz.sproxy.Context;
 import org.sz.sproxy.SocksException;
@@ -35,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TunnelPoolImpl implements TunnelPool, Runnable {
 
-	private static final int TUN_IDLE_TIME = 60 * 1000; // max idle time
+	private static final int TUN_IDLE_TIME = 60 * 10000000; // max idle time
 
 	@SuppressWarnings("unused")
 	private static final long TUN_RENEW_TIME = /* 20 * */30 * 1000L;
@@ -103,7 +104,8 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 	private void houseKeeping() {
 		long t = System.currentTimeMillis();
 
-		log.debug("active connections: {}", connections.size());
+		log.debug("active connections: {}, relayed:\n{}", connections.size(), 
+				connections.stream().map(c -> String.valueOf(c.getRelayedCount())).collect(Collectors.joining(",\n")));
 
 		List<TunnelClient> toClose = connections.stream()
 				.filter(c -> t - ((TunnelInfo) c.getAttachment()).idle > config.getPoolIdleTime(TUN_IDLE_TIME))
@@ -186,11 +188,14 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 
 	@Override
 	public synchronized TunnelClient getTunnel() {
+		long t = System.currentTimeMillis();
+		log.debug("trying getting tunnel connection, ");
 		for (int i = 0; i < 10 && connections.isEmpty(); i++) {
 			if (pendingConnections.isEmpty()) {
 				newTunnel(callback);
 			}
 			try {
+				log.debug("waiting for the first connection");
 				wait(5000);
 			} catch (InterruptedException e) {
 				Thread.currentThread().interrupt();
@@ -201,9 +206,23 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 			throw new SocksException("Unable to connect to tunnel server");
 		}
 		TunnelClient c = connections.peek();
-		if (c.getRelayedCount() > RELAY_THRESHOLD && (connections.size() + pendingConnections.size()) < size) {
-			newTunnel(callback);
+		log.debug("head of connection queue: {}", c.getRelayedCount());
+		while (c.getRelayedCount() >= RELAY_THRESHOLD && (connections.size() + pendingConnections.size()) < size) {			
+			TunnelClient anew = newTunnel(callback);
+			try {
+				log.debug("waiting for new connection to be ready, {}" + anew);
+				wait();
+			} catch (InterruptedException e) {
+				Thread.currentThread().interrupt();
+				throw new SocksException("Interrupted while waiting for tunnel to be ready");
+			}
+			if (!connections.isEmpty()) {
+				c = connections.peek();
+				log.debug("got new connection: {}", anew);
+			}
 		}
+		log.debug("got tunnel connection, relay count: {}, took: {}s", c.getRelayedCount(), 
+				(System.currentTimeMillis() - t / 1000.0));
 		return c;
 	}
 

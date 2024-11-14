@@ -31,6 +31,7 @@ import org.sz.sproxy.BlackListAware;
 import org.sz.sproxy.ChannelHandler;
 import org.sz.sproxy.SocksException;
 import org.sz.sproxy.State;
+import org.sz.sproxy.Writable.WR;
 import org.sz.sproxy.tunnel.AuthManager;
 import org.sz.sproxy.tunnel.KeyManager;
 import org.sz.sproxy.tunnel.Tunnel;
@@ -59,7 +60,7 @@ public class TunnelServerAuthState extends TunnelCmdState<SocketChannel, TunnelS
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
+	public WR execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
 		try {
 			ByteBuffer buf = reader.getPayload();
 			byte requireAuth = buf.get();
@@ -102,6 +103,7 @@ public class TunnelServerAuthState extends TunnelCmdState<SocketChannel, TunnelS
 		} catch (IOException | CertificateEncodingException e) {
 			throw new SocksException(e);
 		}
+		return WR.DONE;
 	}
 
 	@Override

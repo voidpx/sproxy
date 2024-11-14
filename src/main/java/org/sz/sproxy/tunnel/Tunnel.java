@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
 import org.sz.sproxy.ContextAccess;
+import org.sz.sproxy.Flushable;
 import org.sz.sproxy.Readable;
 import org.sz.sproxy.SocksException;
 import org.sz.sproxy.Writable;
@@ -28,7 +29,7 @@ import org.sz.sproxy.Writable;
  * @author Sam Zheng
  *
  */
-public interface Tunnel extends ContextAccess, Writable, Readable, Identifiable {
+public interface Tunnel extends ContextAccess, Writable, Readable, Identifiable, Flushable {
 // 	+----+-----+-------+------+-
 //  |MAG | CMD |  RSV  |packet| 
 //  +----+-----+-------+------+-
@@ -97,7 +98,7 @@ public interface Tunnel extends ContextAccess, Writable, Readable, Identifiable 
 			buf.putInt(b.remaining());
 			buf.put(b);
 			buf.flip();
-			to.write(buf);
+			return to.write(buf);
 		};
 	}
 	
@@ -107,7 +108,7 @@ public interface Tunnel extends ContextAccess, Writable, Readable, Identifiable 
 			buf.putInt(b.remaining());
 			buf.put(b);
 			buf.flip();
-			to.write(buf);
+			return to.write(buf);
 		};
 	}
 	

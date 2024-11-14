@@ -15,8 +15,6 @@
  */
 package org.sz.sproxy.tunnel;
 
-import java.util.concurrent.Executor;
-
 import org.sz.sproxy.Context;
 
 /**
@@ -30,9 +28,5 @@ public interface TunnelContext extends Context {
 	KeyManager getKeyManager();
 	
 	SecretManager getSecretManager();
-	
-	Executor getLowPrioExecutor();
-	
-	Executor getHighPrioExecutor();
 
 }

@@ -17,6 +17,8 @@ package org.sz.sproxy.tunnel;
 
 import java.util.function.Consumer;
 
+import org.sz.sproxy.Writable.WR;
+
 /**
  * A tunnel command.
  * 
@@ -40,6 +42,6 @@ public interface TunnelCmd {
 	 * @param onFinish
 	 * @param ctx
 	 */
-	void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx);
+	WR execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx);
 
 }

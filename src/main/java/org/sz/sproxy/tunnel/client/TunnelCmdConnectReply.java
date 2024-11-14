@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 
 import org.sz.sproxy.ChannelHandler;
 import org.sz.sproxy.Writable;
+import org.sz.sproxy.Writable.WR;
 import org.sz.sproxy.tunnel.Tunnel;
 import org.sz.sproxy.tunnel.TunnelCmd;
 import org.sz.sproxy.tunnel.TunnelContext;
@@ -40,20 +41,21 @@ public class TunnelCmdConnectReply implements TunnelCmd {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
+	public WR execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
 		int channelId = reader.getChannelId();
 		TunneledConnection tunneled = tunnel.getTunneledConnection(channelId);
 		RelayedConnection conn = (RelayedConnection) tunneled;
 		if (conn == null) {
 			// proxied connection already closed
 			TunnelContext context = (TunnelContext)tunnel.getContext();
-			context.getLowPrioExecutor().execute(() -> {
+			context.getTaskExecutor().execute(() -> {
 				tunnel.closeChannel(channelId);
 			});
-			return;
+		} else {
+			((BiConsumer<ChannelHandler<SocketChannel>, Writable>) conn.getAttachment())
+			.accept((ChannelHandler<SocketChannel>) tunnel, conn);
 		}
-		((BiConsumer<ChannelHandler<SocketChannel>, Writable>) conn.getAttachment())
-				.accept((ChannelHandler<SocketChannel>) tunnel, conn);
+		return WR.DONE;
 	}
 
 }

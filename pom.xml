@@ -8,7 +8,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.sz</groupId>
     <artifactId>sproxy</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <name>${project.artifactId}</name>
 
     <dependencyManagement>
@@ -36,7 +36,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.22</version>
+            <version>1.18.34</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

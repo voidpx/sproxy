@@ -21,12 +21,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
@@ -38,7 +36,6 @@ import org.sz.sproxy.Writable;
 import org.sz.sproxy.impl.NioConnection;
 import org.sz.sproxy.tunnel.Crypto;
 import org.sz.sproxy.tunnel.Tunnel;
-import org.sz.sproxy.tunnel.TunnelContext;
 import org.sz.sproxy.tunnel.TunneledConnection;
 import org.sz.sproxy.tunnel.secure.SecuredConnectionHelper;
 
@@ -89,8 +86,9 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 
 	@Override
 	public int read(ByteBuffer buffer) throws IOException {
+		int r = helper.read(buffer);
 		lastActive = System.currentTimeMillis();
-		return helper.read(buffer);
+		return r;
 	}
 	
 	@Deprecated
@@ -132,17 +130,18 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 //		}
 	}
 	
-	private synchronized void internalWrite(ByteBuffer buffer) throws IOException {
-		super.write(buffer);
+	private synchronized WR internalWrite(ByteBuffer buffer) throws IOException {
+		return super.write(buffer);
 	}
 	
 	@Override
-	public synchronized void write(ByteBuffer buffer) throws IOException {
-		lastActive = System.currentTimeMillis();
+	public synchronized WR write(ByteBuffer buffer) throws IOException {
 		if (buffer.remaining() == 0) {
-			return;
+			return WR.DONE;
 		}
-		helper.write(buffer, this::internalWrite);
+		WR ret = helper.write(buffer, this::internalWrite);
+		lastActive = System.currentTimeMillis();
+		return ret;
 	}
 	
 	@Override
@@ -151,6 +150,7 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 	}
 	
 	public void connected(TunneledConnection remote) throws IOException {
+		log.debug("remote connected: {}", remote.getId());
 		remotes.put(remote.getId(), remote);
 		getWriter(remote, CONNECTRP, this::write).write(ByteBuffer.wrap(new byte[0]));
 	}
@@ -186,6 +186,7 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 	public void connectRemote(InetSocketAddress address,
 			BiConsumer<ChannelHandler<SocketChannel>, Writable> connected, Object ctx) throws IOException {
 		int channelId = (int) ctx;
+		log.debug("connecting remote, id: {}, address: {}", channelId, address);
 		new ServerRemoteConnection(context, this, address, connected, channelId);
 	}
 
@@ -197,17 +198,12 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 		list.forEach(TunneledConnection::close);
 		log.info("tunnel server connection closed");
 	}
-	
-	@Override
-	public Executor getExecutor() {
-		return ((TunnelContext)getContext()).getHighPrioExecutor();
-	}
-	
+
 	boolean isAlive() {
 		long t = System.currentTimeMillis();
-		log.debug("checking liveness, last active: {}, now: {}", new Date(lastActive), new Date(t));
+//		log.debug("checking liveness, last active: {}, now: {}", new Date(lastActive), new Date(t));
 		boolean r = t - lastActive <= maxIdle;
-		log.debug("still active: {}", r);
+//		log.debug("still active: {}", r);
 		return r;
 	}
 }

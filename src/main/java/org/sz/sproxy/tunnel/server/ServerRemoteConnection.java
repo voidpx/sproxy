@@ -68,6 +68,7 @@ public class ServerRemoteConnection extends NioConnection<SocketChannel, ServerR
 	protected void handleConnect() throws IOException {
 		if (channel.finishConnect()) {
 			log.debug("Remote connected: {}", channel);
+			key.interestOpsAnd(~SelectionKey.OP_CONNECT);
 			connected.accept(this, tunnel);
 		} else {
 			throw new ConnectionNotFinished();
@@ -76,6 +77,12 @@ public class ServerRemoteConnection extends NioConnection<SocketChannel, ServerR
 
 	@Override
 	protected void handleRead(int ops) throws IOException {
+		if (tunnel.flush() == WR.AGAIN) {
+			if (log.isDebugEnabled()) {
+				log.debug("unable to flush to {}, wait a round", tunnel);
+			}
+			return;
+		}
 		Utils.pump(context, this, tunnel.getDataWriter(getId(), tunnel), this::close);
 	}
 

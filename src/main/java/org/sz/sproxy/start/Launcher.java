@@ -130,6 +130,7 @@ public class Launcher {
 				"-h", new Opt(Configuration.SERVER_HOST),
 				"-p", new Opt(Configuration.SERVER_PORT),
 				"-6", new Opt(Configuration.SERVER_IPV6, false),
+				"-k", new Opt(TunnelServerConfiguration.KEY_STORE, false),
 				"-a", new Opt(TunnelServerConfiguration.AUTHORIZED_KEYS_FILE)), config);
 		ServerImpl.create(config).start();
 	}

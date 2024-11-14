@@ -17,6 +17,8 @@ package org.sz.sproxy.tunnel;
 
 import java.util.function.Consumer;
 
+import org.sz.sproxy.Writable.WR;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -32,15 +34,14 @@ public class TunnelCmdClose implements TunnelCmd {
 	}
 
 	@Override
-	public void execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
+	public WR execute(Tunnel tunnel, TunnelPacketReader reader, Consumer<Object> onFinish, Object ctx) {
 		int channelId = reader.getChannelId();
 		TunneledConnection tunneled = tunnel.getTunneledConnection(channelId);
 		if (tunneled == null) {
 			log.debug("closing a non-existent connection {}, probably closed already", channelId);
-			return;
+		} else {
+			tunnel.execCatchAll(tunneled::close, e -> log.debug("Error closing connection", e));
 		}
-		tunnel.execCatchAll(tunneled::close, e -> log.debug("Error closing connection", e));
-
+		return WR.DONE;
 	}
-
 }

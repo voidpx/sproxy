@@ -23,6 +23,7 @@ import org.sz.sproxy.Context;
 import org.sz.sproxy.Readable;
 import org.sz.sproxy.SocksException;
 import org.sz.sproxy.Writable;
+import org.sz.sproxy.Writable.WR;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -75,17 +76,12 @@ public final class Utils {
 			}
 			b.flip();
 			if (b.remaining() > 0) {
-				to.write(b);
-				if (b.remaining() == 0) {
-					// fully written, reuse the buffer
-					b.clear();
-				} else {
-					// previous buffer was not completely written, use a new buffer
-					// note: to should have put b in a list to be flushed to the wire in this case
-					b = ByteBuffer.allocate(bufSize);
+				if (to.write(b) == WR.AGAIN) {
+					return;
 				}
+				b.clear();
 			} else {
-				break;
+				return;
 			}
 		}
 	}

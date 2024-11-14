@@ -25,7 +25,12 @@ import java.nio.ByteBuffer;
  *
  */
 public interface Writable {
+	
+	enum WR {
+		DONE,
+		AGAIN
+	}
 
-	void write(ByteBuffer buffer) throws IOException;
+	WR write(ByteBuffer buffer) throws IOException;
 
 }

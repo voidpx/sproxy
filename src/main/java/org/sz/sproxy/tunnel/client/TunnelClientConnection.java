@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
@@ -38,7 +37,6 @@ import org.sz.sproxy.impl.NioConnection;
 import org.sz.sproxy.impl.Utils;
 import org.sz.sproxy.tunnel.Crypto;
 import org.sz.sproxy.tunnel.Tunnel;
-import org.sz.sproxy.tunnel.TunnelContext;
 import org.sz.sproxy.tunnel.TunneledConnection;
 import org.sz.sproxy.tunnel.secure.SecuredConnectionHelper;
 
@@ -117,8 +115,8 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 		return connection;
 	}
 	
-	private synchronized void internalWrite(ByteBuffer buffer) throws IOException {
-		super.write(buffer);
+	private synchronized WR internalWrite(ByteBuffer buffer) throws IOException {
+		return super.write(buffer);
 	}
 
 	@Override
@@ -127,11 +125,11 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 	}
 
 	@Override
-	public synchronized void write(ByteBuffer buffer) throws IOException {
+	public synchronized WR write(ByteBuffer buffer) throws IOException {
 		if (buffer.remaining() == 0) {
-			return;
+			return WR.DONE;
 		}
-		helper.write(buffer, this::internalWrite);
+		return helper.write(buffer, this::internalWrite);
 	}
 
 	@Override
@@ -207,12 +205,6 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 	public Object getAttachment() {
 		return attachment;
 	}
-	
-	@Override
-	public Executor getExecutor() {
-		return ((TunnelContext)getContext()).getHighPrioExecutor();
-	}
-	
 	
 	void livenessProbeReplyReceived() {
 		log.debug("got liveness tick reply");
