@@ -76,14 +76,8 @@ public class ServerRemoteConnection extends NioConnection<SocketChannel, ServerR
 	}
 
 	@Override
-	protected void handleRead(int ops) throws IOException {
-		if (tunnel.flush() == WR.AGAIN) {
-			if (log.isDebugEnabled()) {
-				log.debug("unable to flush to {}, wait a round", tunnel);
-			}
-			return;
-		}
-		Utils.pump(context, this, tunnel.getDataWriter(getId(), tunnel), this::close);
+	protected WR handleRead(int ops) throws IOException {
+		return Utils.pump(context, this, tunnel.getDataWriter(getId(), tunnel), this::close);
 	}
 
 	@Override

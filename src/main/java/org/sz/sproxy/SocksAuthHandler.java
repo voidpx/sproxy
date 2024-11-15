@@ -15,6 +15,8 @@
  */
 package org.sz.sproxy;
 
+import org.sz.sproxy.Writable.WR;
+
 /**
  * This interface handles the auth for SOCKS5, currently no auth is implemented.
  * 
@@ -23,6 +25,6 @@ package org.sz.sproxy;
  */
 public interface SocksAuthHandler {
 	
-	void handleAuth(SocksConnection connection) throws SocksException;
+	WR handleAuth(SocksConnection connection) throws SocksException;
 
 }

@@ -24,7 +24,9 @@ import java.nio.channels.NetworkChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -37,6 +39,7 @@ import org.sz.sproxy.State;
 import org.sz.sproxy.StateManager;
 import org.sz.sproxy.StatefulHandler;
 import org.sz.sproxy.Writable;
+import org.sz.sproxy.WriteDoneNoticeable;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -70,6 +73,20 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 	
 	@Getter
 	protected StateManager stateManager;
+	
+	private List<WriteDoneNoticeable> wns = new ArrayList<>();
+	
+	@Override
+	public void writeDone(Writable w) {
+		wakeup(WR.DONE);
+	}
+	
+	@Override
+	public void addWN(WriteDoneNoticeable wn) {
+		if (!wns.contains(wn)) {
+			wns.add(wn);
+		}
+	}
 
 	public NioConnection(Context context, C channel) throws IOException {
 		this.context = context;
@@ -122,7 +139,8 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 						StringWriter sw = new StringWriter();
 						PrintWriter pw = new PrintWriter(sw);
 						new Throwable().printStackTrace(pw);
-						log.debug("NOT fully written: out: {}, remaining: {}, trace:\n{}", n, r - n, sw.toString());
+						log.debug("NOT fully written to {}: out: {}, remaining: {}, trace:\n{}",
+								channel, n, r - n, sw.toString());
 					}
 					ret = WR.AGAIN;
 					break;
@@ -182,7 +200,7 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 		}
 		if (outBuffers.isEmpty()) {
 			key.interestOpsAnd(~SelectionKey.OP_WRITE);
-		} else {
+		} else if ((key.interestOps() & SelectionKey.OP_WRITE) == 0) {
 			key.interestOpsOr(SelectionKey.OP_WRITE);
 		}
 	}
@@ -195,8 +213,8 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 		Thread cur = Thread.currentThread();
 		workers.put(cur, cur);
 		try {
-			handleInternal(ops);
-			wakeup(ops);
+			WR wr = handleInternal(ops);
+			wakeup(wr);
 			return 0; // other code not defined
 		} finally {
 			workers.remove(cur);
@@ -206,11 +224,13 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 		}
 	}
 
-	private synchronized void wakeup(int ops) {
+	private synchronized void wakeup(WR wr) {
 		if (!key.isValid()) {
 			return;
 		}
-		if ((ops & SelectionKey.OP_READ) > 0) { // read was masked out, restore it
+		if (wr == WR.AGAIN) { // write end jam, don't read until further notice
+			key.interestOpsAnd(~SelectionKey.OP_READ);
+		} else {
 			key.interestOpsOr(SelectionKey.OP_READ);
 		}
 		selector.wakeup();
@@ -226,17 +246,20 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 		
 	}
 
-	protected void handleInternal(int ops) throws IOException {
+	protected WR handleInternal(int ops) throws IOException {
 		if ((ops & SelectionKey.OP_WRITE) > 0) {
-			if (!outBuffers.isEmpty() && log.isDebugEnabled()) {
+			if (log.isDebugEnabled()) {
 				log.debug("flush remaining from last time");
 			}
-			flushOutput(); // there was remaining, try flush first
-			if (outBuffers.isEmpty()) {
+			WR wr = flushOutput();
+			if (wr == WR.DONE) { // there was remaining, try flush first
 				if (log.isDebugEnabled()) {
-					log.debug("flushed remaining from last time");
-				} else {
-					log.debug("still jam...");
+					log.debug("flushed remaining from last time, notifying {}", wns);
+				}
+				wns.forEach(w -> w.writeDone(this));
+			} else {
+				if (log.isDebugEnabled()) {
+					log.debug("unable to flush remaining from last time, wait another round");
 				}
 			}
 		}
@@ -247,13 +270,15 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 				if (key.isValid()) {
 					key.interestOpsOr(SelectionKey.OP_CONNECT);
 				}
-				return;
+				return WR.DONE;
 			}
 		}
+		WR wr = WR.DONE;
 		if ((ops & SelectionKey.OP_READ) > 0) {
-			handleRead(ops);
+			wr = handleRead(ops);
 		}
 		flushOutput();
+		return wr;
 	}
 
 	protected void handleConnect() throws IOException {
@@ -261,9 +286,9 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void handleRead(int ops) throws IOException {
+	protected WR handleRead(int ops) throws IOException {
 		Objects.requireNonNull(state, "unknown state!");
-		state.process((H) this);
+		return state.process((H) this);
 	}
 
 	@Override

@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
  * @author Sam Zheng
  *
  */
-public interface Readable {
+public interface Readable extends WriteDoneNoticeable {
 	
 	int read(ByteBuffer buffer) throws IOException;
 

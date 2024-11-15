@@ -34,6 +34,7 @@ import org.sz.sproxy.SocksCommand;
 import org.sz.sproxy.SocksConnection;
 import org.sz.sproxy.SocksException;
 import org.sz.sproxy.Writable;
+import org.sz.sproxy.Writable.WR;
 
 /**
  * @author Sam Zheng
@@ -79,7 +80,7 @@ public class SocksConnectCommand implements SocksCommand {
 	public static final byte DN = 3;
 
 	@Override
-	public void execute(SocksConnection connection, Consumer<Object> onFinish,
+	public WR execute(SocksConnection connection, Consumer<Object> onFinish,
 			Object ctx) throws SocksException {
 		try {
 			ByteBuffer buf = ByteBuffer.allocate(256);
@@ -88,6 +89,7 @@ public class SocksConnectCommand implements SocksCommand {
 			}
 			buf.flip();
 			connect(buf, connection, onFinish, ctx);
+			return WR.DONE;
 		} catch (IOException e) {
 			throw new SocksException(e);
 		}

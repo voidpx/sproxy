@@ -19,6 +19,7 @@ import java.io.IOException;
 
 import org.sz.sproxy.SocksConnection;
 import org.sz.sproxy.SocksException;
+import org.sz.sproxy.Writable.WR;
 import org.sz.sproxy.impl.SocksStateConnected;
 import org.sz.sproxy.tunnel.client.TunnelClient;
 
@@ -29,14 +30,14 @@ import org.sz.sproxy.tunnel.client.TunnelClient;
 public class SocksRelayStateConnected extends SocksStateConnected {
 	
 	@Override
-	public void process(SocksConnection handler) {
+	public WR process(SocksConnection handler) {
 		SocksRelayConnection conn = (SocksRelayConnection)handler;
 		TunnelClient tunnel = (TunnelClient) handler.getRemote();
 		try {
-			tunnel.pump(conn);
+			return tunnel.pump(conn);
 		} catch (IOException e) {
 			throw new SocksException(e);
-		};
+		}
 	}
 
 }

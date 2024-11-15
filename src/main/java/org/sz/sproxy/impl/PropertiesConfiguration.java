@@ -70,5 +70,14 @@ public class PropertiesConfiguration implements Configuration {
 	public String set(String key, String value) {
 		return (String) props.setProperty(key, value);
 	}
+	
+	private int bufSize = -1;
+	@Override
+	public int getPacketBufferSize() {
+		if (bufSize == -1) {
+			bufSize = Configuration.super.getPacketBufferSize();
+		}
+		return bufSize;
+	}
 
 }

@@ -22,6 +22,7 @@ import org.sz.sproxy.Context;
 import org.sz.sproxy.SocksAuthHandler;
 import org.sz.sproxy.SocksConnection;
 import org.sz.sproxy.SocksException;
+import org.sz.sproxy.Writable.WR;
 
 /**
  * @author Sam Zheng
@@ -32,7 +33,7 @@ public class NoAuthHandler implements SocksAuthHandler {
 	static final byte CODE = 0x0;
 	
 	@Override
-	public void handleAuth(SocksConnection connection) throws SocksException {
+	public WR handleAuth(SocksConnection connection) throws SocksException {
 		ByteBuffer buf = ByteBuffer.allocate(257);
 		try {
 			int n = connection.getChannel().read(buf);
@@ -40,7 +41,7 @@ public class NoAuthHandler implements SocksAuthHandler {
 				throw new SocksException("Invalid socks header");
 			}
 			connection.moveTo(SocksStateCmd.NAME, null);
-			connection.write(ByteBuffer.wrap(new byte[] {Context.SOCKS_VERSION, CODE}));
+			return connection.write(ByteBuffer.wrap(new byte[] {Context.SOCKS_VERSION, CODE}));
 		} catch (IOException e) {
 			throw new SocksException(e);
 		}

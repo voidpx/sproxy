@@ -36,12 +36,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TunnelPoolImpl implements TunnelPool, Runnable {
 
-	private static final int TUN_IDLE_TIME = 60 * 10000000; // max idle time
+	private static final int TUN_IDLE_TIME = 5 * 60 * 1000; // max idle time
 
 	@SuppressWarnings("unused")
 	private static final long TUN_RENEW_TIME = /* 20 * */30 * 1000L;
 
-	private static final int MAX_CONN = 10;
+	private static final int MAX_CONN = 15;
 
 	private static final int RELAY_THRESHOLD = 1;
 

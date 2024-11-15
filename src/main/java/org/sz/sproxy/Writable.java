@@ -24,7 +24,8 @@ import java.nio.ByteBuffer;
  * @author Sam Zheng
  *
  */
-public interface Writable {
+@FunctionalInterface
+public interface Writable extends Flushable, WriteDoneNotifier {
 	
 	enum WR {
 		DONE,

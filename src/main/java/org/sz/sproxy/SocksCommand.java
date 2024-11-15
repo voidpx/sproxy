@@ -17,6 +17,8 @@ package org.sz.sproxy;
 
 import java.util.function.Consumer;
 
+import org.sz.sproxy.Writable.WR;
+
 /**
  * This interface represents a SOCKS5 command, e.g. CONNECT.
  * 
@@ -25,6 +27,6 @@ import java.util.function.Consumer;
  */
 public interface SocksCommand {
 
-	void execute(SocksConnection connection, Consumer<Object> onFinish, Object ctx) throws SocksException;
+	WR execute(SocksConnection connection, Consumer<Object> onFinish, Object ctx) throws SocksException;
 
 }

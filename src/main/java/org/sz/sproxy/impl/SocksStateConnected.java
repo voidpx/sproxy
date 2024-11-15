@@ -21,6 +21,7 @@ import java.util.Objects;
 import org.sz.sproxy.SocksConnection;
 import org.sz.sproxy.SocksException;
 import org.sz.sproxy.Writable;
+import org.sz.sproxy.Writable.WR;
 
 /**
  * @author Sam Zheng
@@ -35,10 +36,10 @@ public class SocksStateConnected extends SocksState {
 	}
 
 	@Override
-	public void process(SocksConnection handler) {
+	public WR process(SocksConnection handler) {
 		Objects.requireNonNull(handler);
 		try {
-			Utils.pump(handler.getContext(), handler, (Writable)handler.getRemote(), handler::close);
+			return Utils.pump(handler.getContext(), handler, (Writable)handler.getRemote(), handler::close);
 		} catch (IOException e) {
 			throw new SocksException(e);
 		}

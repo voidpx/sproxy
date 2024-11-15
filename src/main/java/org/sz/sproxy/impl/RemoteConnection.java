@@ -54,8 +54,8 @@ public class RemoteConnection extends NioConnection<SocketChannel, RemoteConnect
 	}
 	
 	@Override
-	protected void handleRead(int ops) throws IOException {
-		Utils.pump(context, this, local, this::close);
+	protected WR handleRead(int ops) throws IOException {
+		return Utils.pump(context, this, local, this::close);
 	}
 
 	@Override

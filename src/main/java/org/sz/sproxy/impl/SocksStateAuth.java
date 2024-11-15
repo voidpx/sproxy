@@ -19,6 +19,7 @@ import java.io.IOException;
 
 import org.sz.sproxy.SocksAuthHandler;
 import org.sz.sproxy.SocksConnection;
+import org.sz.sproxy.Writable.WR;
 
 /**
  * @author Sam Zheng
@@ -35,8 +36,8 @@ public class SocksStateAuth extends SocksState {
 	}
 
 	@Override
-	public void process(SocksConnection handler) throws IOException {
-		getAuthHandler().handleAuth(handler);
+	public WR process(SocksConnection handler) throws IOException {
+		return getAuthHandler().handleAuth(handler);
 	}
 	
 	protected SocksAuthHandler getAuthHandler() {

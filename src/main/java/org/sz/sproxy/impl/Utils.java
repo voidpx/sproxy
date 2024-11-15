@@ -62,7 +62,13 @@ public final class Utils {
 		};
 	};
 	
-	public static void pump(Context context, Readable source, Writable to, Runnable onClose) throws IOException {
+	public static WR pump(Context context, Readable source, Writable to, Runnable onClose) throws IOException {
+		if (to.flush() == WR.AGAIN) {
+			if (log.isDebugEnabled()) {
+				log.debug("unable to flush {}, network jam", to);
+			}
+			return WR.AGAIN;
+		}
 		int bufSize = context.getConfiguration().getPacketBufferSize();
 		ByteBuffer b = ByteBuffer.allocate(bufSize);
 		while (true) {
@@ -72,16 +78,16 @@ public final class Utils {
 				if (onClose != null) {
 					onClose.run();
 				}
-				return;
+				return WR.DONE;
 			}
 			b.flip();
 			if (b.remaining() > 0) {
 				if (to.write(b) == WR.AGAIN) {
-					return;
+					return WR.AGAIN;
 				}
 				b.clear();
 			} else {
-				return;
+				return WR.DONE;
 			}
 		}
 	}

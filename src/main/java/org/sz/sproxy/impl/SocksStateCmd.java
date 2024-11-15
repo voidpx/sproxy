@@ -22,6 +22,7 @@ import org.sz.sproxy.Context;
 import org.sz.sproxy.SocksCommand;
 import org.sz.sproxy.SocksConnection;
 import org.sz.sproxy.SocksException;
+import org.sz.sproxy.Writable.WR;
 
 /**
  * Authenticated state, expecting commands in this state.
@@ -40,7 +41,7 @@ public class SocksStateCmd extends SocksState {
 	}
 
 	@Override
-	public void process(SocksConnection handler) {
+	public WR process(SocksConnection handler) {
 		if (cmdHandler == null) {
 			try {
 				ByteBuffer buf = ByteBuffer.allocate(2);
@@ -59,7 +60,7 @@ public class SocksStateCmd extends SocksState {
 				throw new SocksException(e);
 			}
 		}
-		cmdHandler.execute(handler, null, handler);
+		return cmdHandler.execute(handler, null, handler);
 	}
 	
 }

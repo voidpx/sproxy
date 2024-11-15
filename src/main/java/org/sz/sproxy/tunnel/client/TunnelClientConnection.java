@@ -112,6 +112,7 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 		connection.setId(id);
 		proxied.put(id, connection);
 		callback.channelAdded(this, connection);
+		addWN(connection);
 		return connection;
 	}
 	
@@ -181,8 +182,8 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 	}
 
 	@Override
-	public void pump(RelayedConnection client) throws IOException {
-		Utils.pump(context, client, getDataWriter(client.getId(), this::write), client::close);
+	public WR pump(RelayedConnection client) throws IOException {
+		return Utils.pump(context, client, getDataWriter(client.getId(), this::write), client::close);
 	}
 
 	public void connect(RelayedConnection client, ByteBuffer connInfo,

@@ -152,6 +152,7 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 	public void connected(TunneledConnection remote) throws IOException {
 		log.debug("remote connected: {}", remote.getId());
 		remotes.put(remote.getId(), remote);
+		addWN(remote);
 		getWriter(remote, CONNECTRP, this::write).write(ByteBuffer.wrap(new byte[0]));
 	}
 	

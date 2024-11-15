@@ -64,7 +64,7 @@ public abstract class TunnelCmdState<C extends ByteChannel & NetworkChannel, T e
 	}
 
 	@Override
-	public void process(T handler) throws IOException {
+	public WR process(T handler) throws IOException {
 		while (true) {
 			if (reader.read(handler)) {
 				try {
@@ -72,13 +72,13 @@ public abstract class TunnelCmdState<C extends ByteChannel & NetworkChannel, T e
 						if (log.isDebugEnabled()) {
 							log.debug("unable to write once, try at next poll");
 						}
-						break;
+						return WR.AGAIN;
 					}
 				} finally {
 					reader.reset();
 				}
 			} else {
-				return;
+				return WR.DONE;
 			}
 		}
 	}
