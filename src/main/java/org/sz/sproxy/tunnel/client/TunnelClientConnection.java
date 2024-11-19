@@ -52,8 +52,6 @@ import lombok.extern.slf4j.Slf4j;
 public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelClientConnection>
 		implements TunnelClient, Tunnel, Attachable {
 	
-	volatile long livenessSent;
-
 	SecuredConnectionHelper helper;
 
 	Map<Integer, TunneledConnection> proxied;
@@ -205,29 +203,5 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 	@Override
 	public Object getAttachment() {
 		return attachment;
-	}
-	
-	void livenessProbeReplyReceived() {
-		log.debug("got liveness tick reply");
-		livenessSent = 0;
-	}
-	
-	@Override
-	public void livenessTick() {
-		if (livenessSent == 0) {
-			log.debug("liveness tick");
-			try {
-				getWriter(Tunnel.LPRQ, this::write).write(ByteBuffer.wrap(new byte[0]));
-			} catch (IOException e) {
-				log.debug("Error sending liveness probe", e);
-				close();
-			}
-			livenessSent = System.currentTimeMillis();
-		} else {
-			// previous liveness probe didn't get response, probably connection is jamed or dead,
-			// close this connection, client(browser) should(automatically) retry
-			log.debug("liveness tick didn't get a response, close");
-			close();
-		}
 	}
 }

@@ -18,7 +18,6 @@ package org.sz.sproxy.tunnel.server;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +29,6 @@ import java.util.function.BiConsumer;
 
 import org.sz.sproxy.ChannelHandler;
 import org.sz.sproxy.Context;
-import org.sz.sproxy.SocksException;
 import org.sz.sproxy.StateManager;
 import org.sz.sproxy.Writable;
 import org.sz.sproxy.impl.NioConnection;
@@ -89,45 +87,6 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 		int r = helper.read(buffer);
 		lastActive = System.currentTimeMillis();
 		return r;
-	}
-	
-	@Deprecated
-	void setNewTunnel(TunnelServerConnection newTunnel) {
-		this.newTunnel = newTunnel;
-	}
-	
-	@Deprecated
-	synchronized void switchTunnel() {
-		try {
-			getWriter(Tunnel.STM, this::write).write(ByteBuffer.wrap(new byte[0]));
-		} catch (IOException e) {
-			throw new SocksException(e);
-		}
-		
-		while (!outBuffers.isEmpty()) {
-			try {
-				wait(200);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				log.debug("Interrupted while waiting for data to be sent", e);
-			}
-		}
-		
-		SocketChannel oldChannel = channel;
-		SelectionKey oldKey = key;
-		channel = newTunnel.channel;
-		key = newTunnel.key;
-		helper.setChannel(channel::read);
-		
-		oldKey.attach(null);
-		key.attach(this);
-		
-		log.debug("tunnel switched from {} to {}", oldChannel, channel);
-//		try {
-//			oldChannel.close();
-//		} catch (IOException e) {
-//			log.debug("Error closing old tunnel channel", e);
-//		}
 	}
 	
 	private synchronized WR internalWrite(ByteBuffer buffer) throws IOException {
