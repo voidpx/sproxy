@@ -76,9 +76,12 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 	
 	private List<WriteDoneNoticeable> wns = new ArrayList<>();
 	
+	private volatile int nseq = 0;
+	
 	@Override
-	public void writeDone(Writable w) {
-		wakeup(WR.DONE);
+	public synchronized void writeDone(Writable w) {
+		wakeup(WR.DONE, nseq);
+		nseq++;
 	}
 	
 	@Override
@@ -213,8 +216,9 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 		Thread cur = Thread.currentThread();
 		workers.put(cur, cur);
 		try {
+			int seq = nseq;
 			WR wr = handleInternal(ops);
-			wakeup(wr);
+			wakeup(wr, seq);
 			return 0; // other code not defined
 		} finally {
 			workers.remove(cur);
@@ -224,14 +228,23 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 		}
 	}
 
-	private synchronized void wakeup(WR wr) {
+	private synchronized void wakeup(WR wr, int seq) {
 		if (!key.isValid()) {
 			return;
 		}
-		if (wr == WR.AGAIN) { // write end jam, don't read until further notice
-			key.interestOpsAnd(~SelectionKey.OP_READ);
+		if (wr != null) {
+			if (wr == WR.AGAIN && seq == nseq) { // write end jam, don't read until further notice
+				key.interestOpsAnd(~SelectionKey.OP_READ);
+			} else {
+				if (log.isDebugEnabled()) {
+					log.debug("wakeup: WR: {}, seq:{}, nseq: {}", wr, seq, nseq);
+				}
+				key.interestOpsOr(SelectionKey.OP_READ);
+			}
 		} else {
-			key.interestOpsOr(SelectionKey.OP_READ);
+			if (log.isDebugEnabled()) {
+				log.debug("NOT woken up to handle READ");
+			}
 		}
 		selector.wakeup();
 	}
@@ -273,7 +286,7 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 				return WR.DONE;
 			}
 		}
-		WR wr = WR.DONE;
+		WR wr = null;
 		if ((ops & SelectionKey.OP_READ) > 0) {
 			wr = handleRead(ops);
 		}
