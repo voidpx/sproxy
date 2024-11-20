@@ -34,10 +34,6 @@ public class TunnelClientConfiguration extends TunnelConfiguration {
 	
 	public static final String TUNNEL_POOL_MAX = "tunnel.client.pool.connections.max";
 	
-	public static final String TUNNEL_LIVENESS_RESP = "tunnel.client.liveness.response";
-	
-	public static final int TUNNEL_LIVENESS_RESP_DEF = 16; // in seconds
-	
 	public static final int TUNNEL_SERVER_PORT_DEF = 9999;
 	
 	public TunnelClientConfiguration() {
@@ -76,10 +72,6 @@ public class TunnelClientConfiguration extends TunnelConfiguration {
 	
 	public int getMaxConnections(int def) {
 		return getInt(TUNNEL_POOL_MAX, def);
-	}
-	
-	public int getLivenessResponse() {
-		return getInt(TUNNEL_LIVENESS_RESP, TUNNEL_LIVENESS_RESP_DEF);
 	}
 	
 }

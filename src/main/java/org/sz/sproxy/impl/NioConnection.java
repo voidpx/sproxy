@@ -85,10 +85,13 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 	}
 	
 	@Override
-	public void addWN(WriteDoneNoticeable wn) {
-		if (!wns.contains(wn)) {
-			wns.add(wn);
-		}
+	public synchronized void addWN(WriteDoneNoticeable wn) {
+		wns.add(wn);
+	}
+	
+	@Override
+	public synchronized void removeWN(WriteDoneNoticeable wn) {
+		wns.remove(wn);
 	}
 
 	public NioConnection(Context context, C channel) throws IOException {
@@ -236,7 +239,7 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 			if (wr == WR.AGAIN && seq == nseq) { // write end jam, don't read until further notice
 				key.interestOpsAnd(~SelectionKey.OP_READ);
 			} else {
-				if (log.isDebugEnabled()) {
+				if (log.isDebugEnabled() && seq!=nseq) {
 					log.debug("wakeup: WR: {}, seq:{}, nseq: {}", wr, seq, nseq);
 				}
 				key.interestOpsOr(SelectionKey.OP_READ);

@@ -54,9 +54,8 @@ public class SocksRelayConnection extends SocksConnectionImpl implements Relayed
 	public void connectRemote(InetSocketAddress address,
 			BiConsumer<ChannelHandler<SocketChannel>, Writable> connected, Object ctx) throws IOException {
 		SocksRelayContext context = (SocksRelayContext) getContext();
-		TunnelClient t = context.getPool().getTunnel();
+		TunnelClient t = context.getPool().tunnel(this);
 		remote = t;
-		t.tunnel(this);
 
 	}
 

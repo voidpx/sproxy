@@ -49,8 +49,6 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 	
 	private static final AtomicInteger ID = new AtomicInteger(new Random().nextInt());
 	
-	volatile TunnelServerConnection newTunnel;
-
 	SecuredConnectionHelper helper;
 
 	Map<Integer, TunneledConnection> remotes;
@@ -68,7 +66,7 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 		remotes = new ConcurrentHashMap<>();
 		id = ID.getAndIncrement();
 		lastActive = System.currentTimeMillis();
-		maxIdle = getContext().getConfiguration().getInt("max_idle_time", 5 * 60 * 1000); // 5 min idle
+		maxIdle = getContext().getConfiguration().getInt("max_idle_time", 5 * 60 * 1000); // 30 sec idle
 		context.getConnectionListeners().forEach(l -> l.connectionEstablished(this));
 		moveTo(getStateManager().getInitState(), null);
 	}
@@ -121,9 +119,11 @@ public class TunnelServerConnection extends NioConnection<SocketChannel, TunnelS
 	}
 	
 	void closeTunneled(int id) {
-		if (!remotes.containsKey(id)) {
+		TunneledConnection remote = remotes.get(id);
+		if (remote == null) {
 			return;
 		}
+		removeWN(remote);
 		try {
 			Tunnel.super.closeChannel(id);
 		} finally {

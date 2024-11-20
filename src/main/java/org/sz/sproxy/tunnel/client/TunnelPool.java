@@ -15,12 +15,14 @@
  */
 package org.sz.sproxy.tunnel.client;
 
+import org.sz.sproxy.tunnel.TunneledConnection;
+
 /**
  * @author Sam Zheng
  *
  */
 public interface TunnelPool {
 	
-	TunnelClient getTunnel();
+	TunnelClient tunnel(TunneledConnection tunneled);
 
 }

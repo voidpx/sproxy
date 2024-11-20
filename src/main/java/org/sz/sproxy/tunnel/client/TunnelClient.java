@@ -35,5 +35,7 @@ public interface TunnelClient extends Tunnel, ChannelHandler<SocketChannel> , At
 	void close(RelayedConnection conn);
 	
 	WR pump(RelayedConnection conn) throws IOException;
+	
+	boolean isConnected();
 
 }

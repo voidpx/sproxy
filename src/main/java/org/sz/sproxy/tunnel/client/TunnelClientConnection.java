@@ -68,6 +68,8 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 	@Getter
 	@Setter
 	int id;
+	
+	private volatile boolean connected;
 
 	public TunnelClientConnection(Context context, TunnelClientCallback callback) throws IOException {
 		super(context, SocketChannel.open());
@@ -78,6 +80,7 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 		helper = new SecuredConnectionHelper(channel::read, context);
 		proxied = new ConcurrentHashMap<>();
 		addr = new InetSocketAddress(config.getServerHost(), config.getServerPort());
+		log.debug("starting tunnel connection: {}", channel);
 		channel.connect(addr);
 		selector.wakeup();
 	}
@@ -93,15 +96,26 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 
 	@Override
 	protected void handleConnect() throws IOException {
-		if (channel.finishConnect()) {
-			moveTo(getStateManager().getInitState(), null);
-		} else {
-			throw new ConnectionNotFinished();
+		try {
+			if (channel.finishConnect()) {
+				moveTo(getStateManager().getInitState(), null);
+			} else {
+				throw new ConnectionNotFinished();
+			}
+		} catch (IOException e) {
+			callback.connectError(this);
+			throw e;
 		}
 	}
 	
-	public void connected() {
+	void connected() {
 		callback.connected(this);
+		connected = true;
+	}
+	
+	@Override
+	public boolean isConnected() {
+		return connected;
 	}
 
 	@Override
@@ -111,6 +125,7 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 		proxied.put(id, connection);
 		callback.channelAdded(this, connection);
 		addWN(connection);
+		log.debug("successfully tunneled connection: {}", connection.getChannel());
 		return connection;
 	}
 	
@@ -152,8 +167,8 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 
 	@Override
 	public void close() {
-		callback.closing(this);
 		super.close();
+		callback.closing(this);
 	}
 
 	@Override
@@ -166,6 +181,7 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 			return;
 		}
 		RelayedConnection conn = (RelayedConnection) proxied.get(id);
+		removeWN(conn);
 		try {
 			TunnelClient.super.closeChannel(id);
 		} finally {

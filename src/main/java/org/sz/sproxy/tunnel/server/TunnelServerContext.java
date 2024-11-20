@@ -17,7 +17,6 @@ package org.sz.sproxy.tunnel.server;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Predicate;
 
 import org.sz.sproxy.AcceptorFactory;
 import org.sz.sproxy.ChannelHandler;
@@ -60,9 +59,13 @@ public class TunnelServerContext extends ContextImpl implements TunnelContext {
 		Thread watcher = new Thread(() -> {
 			while (true) {
 				try {
-					connections.values().stream().filter(Predicate.not(TunnelServerConnection::isAlive)).forEach(c -> {
-						c.close();
-					});
+					log.debug("tunnel connections: {}", connections.size());
+//					int[] removed = new int[] {0};
+//					connections.values().stream().filter(Predicate.not(TunnelServerConnection::isAlive)).forEach(c -> {
+//						c.close();
+//						removed[0]++;
+//					});
+//					log.debug("idle connections removed: {}", removed);
 					Thread.sleep(10000);
 				} catch (InterruptedException e) {
 					Thread.currentThread().interrupt();

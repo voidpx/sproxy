@@ -124,7 +124,7 @@ public class AcceptorImpl implements Acceptor, NioChannelHandler<ServerSocketCha
 						log.debug("closing in progress");
 					}
 				} catch (Throwable e) {
-					log.debug("Error handling channel, close", e);
+					log.debug("Error handling channel {}, close", handler.getChannel(), e);
 					handler.close();
 				}
 			}));
@@ -143,7 +143,7 @@ public class AcceptorImpl implements Acceptor, NioChannelHandler<ServerSocketCha
 				Iterator<SelectionKey> it = selector.selectedKeys().iterator();
 				while (it.hasNext()) {
 					SelectionKey k = it.next();
-					it.remove();
+					it.remove(); // must do this
 					processSelection(k);
 
 				}

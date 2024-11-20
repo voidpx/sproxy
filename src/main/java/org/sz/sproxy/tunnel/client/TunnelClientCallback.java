@@ -23,6 +23,8 @@ public interface TunnelClientCallback {
 	
 	void connected(TunnelClient tunnel);
 	
+	void connectError(TunnelClient tunnel);
+	
 	void channelAdded(TunnelClient tunnel, RelayedConnection tunneled);
 	
 	void channelClosed(TunnelClient tunnel, RelayedConnection tunneled);

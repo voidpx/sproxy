@@ -19,13 +19,12 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import org.sz.sproxy.Context;
 import org.sz.sproxy.SocksException;
+import org.sz.sproxy.tunnel.TunneledConnection;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,12 +35,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class TunnelPoolImpl implements TunnelPool, Runnable {
 
-	private static final int TUN_IDLE_TIME = 5 * 60 * 1000; // max idle time
+	private static final int TUN_IDLE_TIME = 60 * 1000; // max idle time
 
-	@SuppressWarnings("unused")
-	private static final long TUN_RENEW_TIME = /* 20 * */30 * 1000L;
-
-	private static final int MAX_CONN = 15;
+	private static final int MAX_CONN = 20;
 
 	private static final int RELAY_THRESHOLD = 1;
 
@@ -65,8 +61,6 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 
 	TunnelClientConfiguration config;
 	
-	AtomicInteger livenessProbeId = new AtomicInteger(new Random().nextInt());
-
 	public TunnelPoolImpl(Context context) {
 		this(context, ((TunnelClientConfiguration) context.getConfiguration()).getMaxConnections(MAX_CONN));
 	}
@@ -81,52 +75,60 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 		t.setName("tunnel_pool_house_keeping");
 		t.setDaemon(true);
 		t.start();
-		
-//		// don't do liveness tick, it sometimes reports false positive
-//		Thread livenessTick = new Thread(() -> {
-//			while (true) {
-//				synchronized (this) {
-//					new ArrayList<>(connections).forEach(c -> c.livenessTick());
-//				}
-//				try {
-//					Thread.sleep(config.getLivenessResponse() * 1000 + 500); // half a second skew
-//				} catch (InterruptedException e) {
-//					Thread.currentThread().interrupt();
-//					log.debug(e.getMessage(), e);
-//				}
-//			}
-//		});
-//		livenessTick.setName("tunnel_liveness_tick");
-//		livenessTick.setDaemon(true);
-//		livenessTick.start();
 	}
-
+	
 	private void houseKeeping() {
 		long t = System.currentTimeMillis();
 
 		log.debug("active connections: {}, relayed:\n{}", connections.size(), 
 				connections.stream().map(c -> String.valueOf(c.getRelayedCount())).collect(Collectors.joining(",\n")));
 
-		List<TunnelClient> toClose = connections.stream()
-				.filter(c -> t - ((TunnelInfo) c.getAttachment()).idle > config.getPoolIdleTime(TUN_IDLE_TIME))
-				.toList();
-
-		log.debug("closing idle connections: {}", toClose.size());
-		toClose.forEach(c -> {
-			// close tunnel that's idle for too long
-			log.debug("closing idle tunnel");
-			c.close();
-		});
+		synchronized (this) {
+			List<TunnelClient> toClose = connections.stream()
+					.filter(c -> t - ((TunnelInfo) c.getAttachment()).idle > config.getPoolIdleTime(TUN_IDLE_TIME))
+					.toList();
+			
+			log.debug("closing idle connections: {}", toClose.size());
+			toClose.forEach(c -> {
+				// close tunnel that's idle for too long
+				log.debug("closing idle tunnel");
+				c.close();
+			});
+		}
 		
 	}
-
-	TunnelClientCallback callback = new TunnelClientCallback() {
-
+	
+	private static class ConnState {
+		RelayedConnection tunneled;
+		volatile boolean error;
+		ConnState(RelayedConnection tunneled) {
+			this.tunneled = tunneled;
+		}
+	}
+	
+	private class CB implements TunnelClientCallback {
+		ConnState state;
+		CB(ConnState st) {
+			state = st;
+		}
 		@Override
 		public void connected(TunnelClient tunnel) {
 			tunnel.attach(new TunnelInfo(System.currentTimeMillis()));
+			tunnel.tunnel(state.tunneled);
+			synchronized (tunnel) {
+				tunnel.notifyAll();
+			}
 			add(tunnel);
 			log.debug("Tunnel connection created: {}", tunnel);
+		}
+		
+		@Override
+		public void connectError(TunnelClient tunnel) {
+			log.error("tunnel connect error");
+			state.error = true;
+			synchronized (tunnel) {
+				tunnel.notifyAll();
+			}
 		}
 
 		@Override
@@ -151,7 +153,7 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 			i.idle = Long.MAX_VALUE;
 		}
 
-	};
+	}
 
 	@Override
 	public void run() {
@@ -181,57 +183,45 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 	}
 
 	private synchronized void reposition(TunnelClient t) {
-		connections.remove(t);
-		connections.add(t);
-		notifyAll();
+		if (connections.contains(t)) { 
+			connections.remove(t);
+			connections.add(t);
+			notifyAll();
+		}
 	}
 
 	@Override
-	public synchronized TunnelClient getTunnel() {
-		long t = System.currentTimeMillis();
-		log.debug("trying getting tunnel connection, ");
-		for (int i = 0; i < 10 && connections.isEmpty(); i++) {
-			if (pendingConnections.isEmpty()) {
-				newTunnel(callback);
-			}
-			try {
-				log.debug("waiting for the first connection");
-				wait(5000);
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				throw new SocksException("Interrupted while waiting for tunnel to be ready");
+	public TunnelClient tunnel(TunneledConnection tunneled) {
+		synchronized (this) {
+			TunnelClient c = connections.peek();
+			if (c != null && c.getRelayedCount() < RELAY_THRESHOLD) {
+				((TunnelInfo)c.getAttachment()).idle = Long.MAX_VALUE;
+				log.debug("found idle tunnel: {}, {}", c.getChannel(), c.getRelayedCount());
+				c.tunnel((RelayedConnection)tunneled);
+				return c;
 			}
 		}
-		if (connections.isEmpty()) {
-			throw new SocksException("Unable to connect to tunnel server");
-		}
-		TunnelClient c = connections.peek();
-		log.debug("head of connection queue: {}", c.getRelayedCount());
-		while (c.getRelayedCount() >= RELAY_THRESHOLD && (connections.size() + pendingConnections.size()) < size) {			
-			TunnelClient anew = newTunnel(callback);
-			try {
-				log.debug("waiting for new connection to be ready, {}" + anew);
-				wait();
-			} catch (InterruptedException e) {
-				Thread.currentThread().interrupt();
-				throw new SocksException("Interrupted while waiting for tunnel to be ready");
-			}
-			if (!connections.isEmpty()) {
-				c = connections.peek();
-				log.debug("got new connection: {}", anew);
-			}
-		}
-		log.debug("got tunnel connection, relay count: {}, took: {}s", c.getRelayedCount(), 
-				(System.currentTimeMillis() - t / 1000.0));
-		return c;
+		log.debug("creating new tunnel");
+		return newTunnel((RelayedConnection)tunneled);
 	}
 
-	synchronized TunnelClient newTunnel(TunnelClientCallback callback) {
+	private TunnelClient newTunnel(RelayedConnection tunneled) {
 		try {
-			TunnelClient c = new TunnelClientConnection(context, callback);
-			pendingConnections.add(c);
+			ConnState st = new ConnState(tunneled);
+			TunnelClient c = new TunnelClientConnection(context, new CB(st));
+			synchronized (c) {
+				for (int i = 0; i < 3 && !c.isConnected() && !st.error; i++) {
+					c.wait(5000);
+				}
+			}
+			if (!c.isConnected()) {
+				throw new SocksException("unable to create tunnel");
+			}
 			return c;
 		} catch (IOException e) {
+			throw new SocksException(e);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
 			throw new SocksException(e);
 		}
 	}
