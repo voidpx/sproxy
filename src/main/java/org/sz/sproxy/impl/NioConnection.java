@@ -184,6 +184,8 @@ public abstract class NioConnection<C extends SelectableChannel & ByteChannel & 
 				closeInternal();
 			} catch (IOException e) {
 				log.error("Error closing channel " + getChannel(), e);
+			} finally {
+				closing.compareAndSet(true, false);
 			}
 		});
 	}

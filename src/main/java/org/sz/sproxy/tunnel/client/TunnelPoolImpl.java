@@ -34,8 +34,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class TunnelPoolImpl implements TunnelPool, Runnable {
-
-	private static final int TUN_IDLE_TIME = 60 * 1000; // max idle time
+	private static final int TUN_IDLE_TIME = 1 * 60 * 1000;
 
 	private static final int MAX_CONN = 20;
 
@@ -76,22 +75,24 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 		t.setDaemon(true);
 		t.start();
 	}
-	
 	private void houseKeeping() {
-		long t = System.currentTimeMillis();
 
 		log.debug("active connections: {}, relayed:\n{}", connections.size(), 
 				connections.stream().map(c -> String.valueOf(c.getRelayedCount())).collect(Collectors.joining(",\n")));
-
+		long t = System.currentTimeMillis();
+		int to = config.getPoolIdleTime(TUN_IDLE_TIME);
 		synchronized (this) {
-			List<TunnelClient> toClose = connections.stream()
-					.filter(c -> t - ((TunnelInfo) c.getAttachment()).idle > config.getPoolIdleTime(TUN_IDLE_TIME))
+			
+			List<TunnelClientConnection> toClose = connections.stream()
+					.map(c -> (TunnelClientConnection)c)
+					.map(c -> {c.cleanupOrphaned(); return c;})
+					.filter(c -> t - ((TunnelInfo) c.getAttachment()).idle > to)
 					.toList();
 			
 			log.debug("closing idle connections: {}", toClose.size());
 			toClose.forEach(c -> {
 				// close tunnel that's idle for too long
-				log.debug("closing idle tunnel");
+				log.debug("closing idle tunnel: {}", c);
 				c.close();
 			});
 		}
@@ -192,23 +193,38 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 
 	@Override
 	public TunnelClient tunnel(TunneledConnection tunneled) {
+		ConnState st;
+		TunnelClient c;
 		synchronized (this) {
-			TunnelClient c = connections.peek();
+			c = connections.peek();
 			if (c != null && c.getRelayedCount() < RELAY_THRESHOLD) {
 				((TunnelInfo)c.getAttachment()).idle = Long.MAX_VALUE;
 				log.debug("found idle tunnel: {}, {}", c.getChannel(), c.getRelayedCount());
 				c.tunnel((RelayedConnection)tunneled);
 				return c;
 			}
+			if (c == null || connections.size() + pendingConnections.size() < size) {
+				log.debug("creating new tunnel");
+				st = new ConnState((RelayedConnection)tunneled);
+				try {
+					c = new TunnelClientConnection(context, new CB(st));
+					pendingConnections.add(c);
+				} catch (IOException e) {
+					throw new SocksException("error creating tunnel", e);
+				}
+			} else {
+				((TunnelInfo)c.getAttachment()).idle = Long.MAX_VALUE;
+				log.debug("max connections reached, reusing tunnel: {}, {}", c.getChannel(), c.getRelayedCount());
+				c.tunnel((RelayedConnection)tunneled);
+				return c;
+			}
 		}
-		log.debug("creating new tunnel");
-		return newTunnel((RelayedConnection)tunneled);
+		return waitForNewTunnel((TunnelClientConnection)c, st);
 	}
 
-	private TunnelClient newTunnel(RelayedConnection tunneled) {
+	private TunnelClient waitForNewTunnel(TunnelClientConnection c, ConnState st) {
 		try {
-			ConnState st = new ConnState(tunneled);
-			TunnelClient c = new TunnelClientConnection(context, new CB(st));
+			
 			synchronized (c) {
 				for (int i = 0; i < 3 && !c.isConnected() && !st.error; i++) {
 					c.wait(5000);
@@ -218,8 +234,6 @@ public class TunnelPoolImpl implements TunnelPool, Runnable {
 				throw new SocksException("unable to create tunnel");
 			}
 			return c;
-		} catch (IOException e) {
-			throw new SocksException(e);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			throw new SocksException(e);

@@ -27,6 +27,7 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 import org.sz.sproxy.Attachable;
 import org.sz.sproxy.ChannelHandler;
@@ -219,5 +220,14 @@ public class TunnelClientConnection extends NioConnection<SocketChannel, TunnelC
 	@Override
 	public Object getAttachment() {
 		return attachment;
+	}
+	
+	void cleanupOrphaned() {
+		List<TunneledConnection> dead = proxied.entrySet().stream().map(e -> e.getValue())
+				.filter(c -> !c.getChannel().isOpen()).collect(Collectors.toList());
+		if (log.isDebugEnabled() && !dead.isEmpty()) {
+			log.debug("clean up orphaned connetions from tunnel: {}", dead);
+		}
+		dead.forEach(c -> c.close());
 	}
 }
